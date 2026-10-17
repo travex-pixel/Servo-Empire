@@ -1,0 +1,1119 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#2a1020">
+<meta name="description" content="Servo Empire: pies, petrol and pure chaos. Build the greatest servo in Australia.">
+<title>Servo Empire</title>
+<style>
+:root{color-scheme:dark;--ink:#2b1a14;--cream:#fff3dc;--sun:#ff9f3f;--red:#d64b2a;--green:#4fb86a;}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{margin:0;padding:0;height:100%;overflow:hidden;background:#2a1020;font-family:'Arial Rounded MT Bold','Helvetica Neue',Arial,sans-serif;color:var(--cream);touch-action:none;user-select:none;-webkit-user-select:none;overscroll-behavior:none;}
+canvas#game{position:fixed;inset:0;width:100%;height:100%;display:block;}
+#hud{position:fixed;left:0;right:0;top:0;padding:calc(env(safe-area-inset-top) + 8px) 10px 0;display:flex;gap:8px;align-items:flex-start;pointer-events:none;z-index:5;}
+.pill{background:rgba(43,26,20,.9);border:3px solid var(--cream);border-radius:16px;padding:6px 12px;font-weight:900;box-shadow:0 4px 0 rgba(0,0,0,.35);}
+#cash{font-size:22px;color:#ffe27a;min-width:100px;text-align:center;transition:transform .1s;}
+#cash.pulse{transform:scale(1.15);}
+#goal{flex:1 1 420px;font-size:13px;line-height:1.2;min-width:0;max-width:420px;}
+#hud .spacer{flex:1 1 0;}
+#goalText{font-size:12px;line-height:1.15;max-height:28px;overflow:hidden;}
+#goal .bar{height:8px;border-radius:6px;background:#1a0d0a;margin-top:4px;overflow:hidden;border:2px solid #1a0d0a;}
+#goal .bar i{display:block;height:100%;background:var(--green);width:0%;transition:width .2s;}
+.btn{pointer-events:auto;cursor:pointer;background:var(--sun);color:var(--ink);border:3px solid var(--ink);border-radius:14px;font-weight:900;font-size:16px;padding:8px 12px;box-shadow:0 4px 0 var(--ink);font-family:inherit;}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 var(--ink);}
+.btn.icon{width:44px;height:44px;padding:0;font-size:22px;line-height:1;flex:none;}
+.btn.ghost{background:#eee;}
+.btn.big{font-size:20px;padding:12px 20px;}
+.btn.green{background:var(--green);color:#fff;}
+.btn.red{background:var(--red);color:#fff;}
+.btn[disabled]{opacity:.45;filter:grayscale(1);}
+#banner{position:fixed;top:calc(env(safe-area-inset-top) + 74px);left:50%;transform:translateX(-50%) translateY(-20px);background:var(--red);color:#fff;border:3px solid var(--ink);border-radius:14px;padding:8px 16px;font-weight:900;font-size:16px;opacity:0;transition:all .25s;z-index:6;pointer-events:none;text-align:center;max-width:92vw;}
+#banner.show{opacity:1;transform:translateX(-50%) translateY(0);}
+#toast{position:fixed;bottom:calc(env(safe-area-inset-bottom) + 24px);left:50%;transform:translateX(-50%);background:rgba(43,26,20,.92);border:3px solid var(--cream);border-radius:12px;padding:8px 14px;font-weight:900;opacity:0;transition:opacity .2s;z-index:6;pointer-events:none;max-width:92vw;text-align:center;}
+#toast.show{opacity:1;}
+#stickHint{position:fixed;bottom:calc(env(safe-area-inset-bottom) + 70px);left:50%;transform:translateX(-50%);font-weight:900;color:#fff;text-shadow:2px 2px 0 #000;pointer-events:none;opacity:.9;z-index:4;font-size:14px;transition:opacity .5s;text-align:center;}
+.modal{position:fixed;inset:0;background:rgba(20,8,16,.72);display:none;align-items:center;justify-content:center;z-index:10;padding:16px;}
+.modal.open{display:flex;}
+.card{background:var(--cream);color:var(--ink);border:4px solid var(--ink);border-radius:22px;padding:18px;width:min(420px,100%);max-height:calc(100vh - 32px);overflow:auto;box-shadow:0 8px 0 var(--ink);}
+.card h2{margin:0 0 6px;font-size:26px;letter-spacing:-.5px;}
+.card h3{margin:14px 0 6px;font-size:13px;text-transform:uppercase;opacity:.7;letter-spacing:1px;}
+.card p{margin:6px 0;font-size:15px;line-height:1.35;}
+.row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:2px dashed rgba(43,26,20,.2);}
+.row:last-child{border-bottom:none;}
+.row label{font-weight:900;font-size:15px;}
+input[type=range]{width:130px;accent-color:var(--red);}
+.toggle{width:52px;height:30px;border-radius:15px;background:#bbb;border:3px solid var(--ink);position:relative;cursor:pointer;pointer-events:auto;flex:none;}
+.toggle::after{content:'';position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:10px;background:#fff;border:2px solid var(--ink);transition:left .15s;}
+.toggle.on{background:var(--green);}.toggle.on::after{left:24px;}
+.upg{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:2px dashed rgba(43,26,20,.2);}
+.upg .ico{font-size:28px;width:40px;text-align:center;flex:none;}
+.upg .info{flex:1;min-width:0;}.upg .info b{display:block;font-size:16px;}.upg .info small{display:block;opacity:.75;font-size:12px;}
+.upg .lv{font-size:11px;letter-spacing:2px;color:#2d7a3e;}
+.upg .btn{min-width:86px;font-size:14px;padding:8px 6px;flex:none;}
+textarea{width:100%;height:64px;font-family:monospace;font-size:12px;border:3px solid var(--ink);border-radius:10px;padding:6px;resize:none;}
+.big-num{font-size:46px;font-weight:900;color:#2d7a3e;text-align:center;margin:8px 0;}
+.center{text-align:center;}
+.stack{display:flex;flex-direction:column;gap:10px;margin-top:12px;}
+.rowbtns{display:flex;gap:8px;margin-top:8px;}.rowbtns .btn{flex:1;}
+#splash{background:linear-gradient(180deg,#ff7a3d 0%,#b8336a 55%,#2a1020 100%);}
+#splash .title{font-size:min(17vw,80px);line-height:.92;letter-spacing:-2px;color:#fff3dc;text-shadow:5px 5px 0 #2b1a14;text-align:center;margin:0;}
+#splash .sub{font-size:18px;color:#fff;font-weight:900;text-align:center;text-shadow:2px 2px 0 #2b1a14;margin:14px 0 28px;}
+.footnote{font-size:11px;opacity:.6;margin-top:10px;line-height:1.4;}
+.tag{display:inline-block;background:var(--ink);color:var(--cream);border-radius:8px;padding:2px 8px;font-size:11px;letter-spacing:1px;}
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+<div id="hud">
+  <div class="pill" id="cash">$0</div>
+  <div class="pill" id="goal"><div id="goalText">Next: open up</div><div class="bar"><i id="goalBar"></i></div></div>
+  <div class="spacer"></div>
+  <button class="btn icon" id="btnUpg" style="display:none" title="Upgrades" aria-label="Upgrades">🛠️</button>
+  <button class="btn icon" id="btnSettings" title="Settings" aria-label="Settings">⚙️</button>
+</div>
+<div id="banner"></div>
+<div id="toast"></div>
+<div id="stickHint" style="display:none">Drag anywhere to walk · WASD / arrows on desktop</div>
+
+<div class="modal open" id="splash">
+  <div class="center" style="pointer-events:auto;max-width:460px">
+    <h1 class="title">SERVO<br>EMPIRE</h1>
+    <p class="sub">Pies, petrol and pure chaos.<br>Build the greatest servo in Australia.</p>
+    <button class="btn big green" id="btnStart">OPEN UP, LEGEND</button>
+    <p class="footnote" style="color:#fff">Beta build v<span id="verTag"></span> · Made with pies, no cookies. Saves live on your phone.</p>
+  </div>
+</div>
+
+<div class="modal" id="settings">
+  <div class="card">
+    <h2>⚙️ Settings</h2>
+    <div class="row"><label>Sound effects</label><input type="range" id="sfxVol" min="0" max="100" value="80"></div>
+    <div class="row"><label>Music</label><input type="range" id="musVol" min="0" max="100" value="45"></div>
+    <div class="row"><label>Haptics (vibrate)</label><div class="toggle on" id="tgHaptics"></div></div>
+    <div class="row"><label>Guide arrow</label><div class="toggle on" id="tgArrow"></div></div>
+    <div class="row"><label>Spicy language</label><div class="toggle on" id="tgSpicy"></div></div>
+    <div class="row"><label>Anonymous analytics</label><div class="toggle on" id="tgAnalytics"></div></div>
+    <p class="footnote">Analytics are anonymous gameplay counters only (no names, emails or device IDs beyond a random install id). Flip it off any time.</p>
+    <h3>Save code</h3>
+    <textarea id="saveCode" placeholder="Export writes your save code here. Paste a code and hit Import to restore."></textarea>
+    <div class="rowbtns"><button class="btn ghost" id="btnExport">Export</button><button class="btn ghost" id="btnImport">Import</button></div>
+    <div class="rowbtns"><button class="btn red" id="btnReset">Reset save</button><button class="btn" id="btnCloseSettings">Done</button></div>
+    <p class="footnote" id="statsLine"></p>
+  </div>
+</div>
+
+<div class="modal" id="upgrades">
+  <div class="card">
+    <h2>🛠️ Back Office</h2>
+    <p>Spend it before Shazza finds the kitty. <span class="tag" id="upgCash">$0</span></p>
+    <div id="upgList"></div>
+    <div class="rowbtns"><button class="btn" id="btnCloseUpg">Back to the floor</button></div>
+  </div>
+</div>
+
+<div class="modal" id="welcome">
+  <div class="card center">
+    <h2>👋 Welcome back, boss</h2>
+    <p id="welcomeAway">You were gone a while.</p>
+    <div class="big-num" id="welcomeNum">$0</div>
+    <p id="welcomeLine" class="footnote"></p>
+    <div class="stack">
+      <button class="btn big green" id="btnDouble">DOUBLE IT <small style="display:block;font-size:12px;opacity:.85">(free during beta, no ad)</small></button>
+      <button class="btn ghost" id="btnWelcomeClose">Cheers, I'll take it</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="complete">
+  <div class="card center">
+    <h2>🥧 SERVO LEGEND</h2>
+    <p>Every pad built. The Big Pie stands proud. Grey nomads are weeping with joy.</p>
+    <div class="big-num" id="completeNum">$0</div>
+    <p class="footnote" id="completeLine"></p>
+    <div class="stack">
+      <button class="btn big" id="btnServo2">OPEN SERVO #2 <small style="display:block;font-size:12px;opacity:.85">(coming soon)</small></button>
+      <button class="btn ghost" id="btnCompleteClose">Keep running this one</button>
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+/* =========================================================================
+   SERVO EMPIRE  -  one file, no build step, no external assets.
+   Sections: 1 config  2 utils  3 audio  4 analytics  5 save  6 map/pathing
+             7 Sim (pure, no DOM)  8 renderer  9 input  10 UI  11 boot
+   ========================================================================= */
+const HEADLESS = (typeof window === 'undefined') || !!globalThis.SERVO_HEADLESS;
+const VERSION = '0.1.0';
+const SAVE_VERSION = 2;
+const SAVE_KEY = 'servoEmpire.save';
+const SAVE_BACKUP_KEY = 'servoEmpire.save.bak';
+const POSTHOG_KEY = 'phc_REPLACE_ME_WITH_YOUR_PROJECT_KEY'; // <- fill in. Placeholder keys never load PostHog.
+const POSTHOG_HOST = 'https://us.i.posthog.com';
+const SIM_DT = 1 / 60;
+
+/* ---------------- 1. CONFIG / ECONOMY ---------------- */
+const ECON = {
+  startCash: 15,
+  pump:    { interval: 5.5, fillTime: 2.5, pay: 12 },
+  carwash: { interval: 12,  washTime: 4.0, pay: 40 },
+  customer:{ interval: 4.0, perItem: 0.35, patience: 45, serveTime: 0.9, queueMax: 6 },
+  makers: {
+    pie:    { rate: 2.6, cap: 8, price: 6,  name: 'Pie',          short: 'pie' },
+    coffee: { rate: 3.2, cap: 6, price: 9,  name: 'Iced Coffee',  short: 'coffee' },
+    roll:   { rate: 3.0, cap: 8, price: 12, name: 'Sausage Roll', short: 'roll' },
+  },
+  shelfCap: 10,
+  carryBase: 4,
+  walkBase: 3.4,
+  staffSpeedBase: 2.8,
+  staffCarry: 4,
+  billboardMult: 1.5,
+  till2Mult: 1.3,
+  bigPieMult: 1.25,
+  rushMult: 2.5, rushDur: 30,
+  chaosFirst: 100, chaosMin: 120, chaosMax: 180,
+  offlineCapSec: 7200,
+  offlineBase: 0.5, offlinePerStaff: 0.1,
+  padFillSec: 2.0,
+  seagulls: 3, seagullHover: 5,
+};
+const UPGRADES = [
+  { id: 'walk',    icon: '👟', name: 'Walk Speed',     fx: '+12% walk speed per level',        base: 80,  mult: 1.6, max: 8, blurb: 'Thongs → Volleys → actual runners' },
+  { id: 'carry',   icon: '🧺', name: 'Carry Capacity', fx: '+2 items carried per level',       base: 120, mult: 1.6,  max: 8, blurb: 'Bigger arms, bigger esky' },
+  { id: 'station', icon: '🔥', name: 'Station Speed',  fx: '+15% cooking & pumping per level', base: 150, mult: 1.6,  max: 8, blurb: 'Turn the pie warmer up to "surface of the sun"' },
+  { id: 'price',   icon: '💸', name: 'Prices',         fx: '+20% on everything per level',     base: 200, mult: 1.6,  max: 8, blurb: 'Highway tax, mate' },
+  { id: 'staff',   icon: '⚡', name: 'Staff Speed',    fx: '+20% staff speed per level',       base: 150, mult: 1.6,  max: 8, blurb: 'Shorter smokos' },
+];
+const STAFF_INFO = {
+  gav:    { name: 'Gav the Tradie', job: 'restocks the counter from the warmers', hireLine: "Righto boss. Where's the pies?" },
+  val:    { name: 'Aunty Val',      job: 'works the register so the counter serves itself', hireLine: "Love, I've run a till since before you were born." },
+  shazza: { name: 'Shazza',         job: 'pump attendant, collects the pump & car wash cash', hireLine: "Pumps are mine now. Don't touch nothin'." },
+};
+const LINES = [
+  // [text, spicy]
+  ["Pump 2's cooked, mate.", 0],
+  ["Two pies and a Big M, cheers legend.", 0],
+  ["Oi, is the pie warmer even on?", 0],
+  ["VB long neck at 8am? It's 5pm somewhere.", 0],
+  ["Got any of them sausage rolls or nah?", 0],
+  ["I'm not paying six bucks for a pie. ...Yeah alright, one pie.", 0],
+  ["Fill 'er up, the ute's running on fumes and prayers.", 0],
+  ["Flat out like a lizard drinking, hey?", 0],
+  ["This coffee's colder than a Darwin Christmas. Perfect.", 0],
+  ["Carn, hurry up, the footy's on in ten.", 0],
+  ["Me missus said get milk. Got pies instead.", 0],
+  ["Fair dinkum, that's a lot of pies.", 0],
+  ["Yeah nah yeah nah yeah. One iced coffee.", 0],
+  ["Servo pie at 3am: a national dish.", 0],
+  ["Can I pay in Shapes? No? Righto.", 0],
+  ["The seagulls out here have a union, I swear.", 0],
+  ["That'll do, that'll do.", 0],
+  ["Chuck a sausage roll in, I'm busting.", 0],
+  ["Where's the dunny? ...Pie first, then the dunny.", 0],
+  ["Sauce is extra?! Oh it's not. Legend.", 0],
+  ["Bloody oath this is a good servo.", 0],
+  ["The fuel price went up while I was filling.", 0],
+  ["Had a big one last night. Need grease. Stat.", 0],
+  ["Keep the change. It's 5 cents.", 0],
+  ["Sweet as, see ya round like a rissole.", 0],
+  ["The highway's chockers, everyone's stopping here.", 0],
+  ["Pie's so hot it's a workplace hazard.", 0],
+  ["She'll be right. Won't she? She'll be right.", 0],
+  ["Loyalty card? Nah. Good. Hate 'em.", 0],
+  ["Only came in for the aircon. Leaving with pies.", 0],
+  ["Woke up in a paddock. Need a coffee.", 0],
+  ["Is the car wash open or is that just rain?", 0],
+  ["Straya, mate. Straya.", 0],
+  ["Tell Gav the pies are a ten outta ten.", 0],
+  ["Petrol Pete's over the road charges for sauce. Criminal.", 0],
+  ["Grey nomads inbound. Hide the good pies.", 0],
+  ["Shit, I've left the ute running. Oh well. Pie.", 1],
+  ["Fuck me dead, that pie warmer's a beauty.", 1],
+  ["Pump 1's fucked, mate. Pump 2 though? Dead set perfect.", 1],
+  ["Petrol's dearer than me rent, strewth.", 1],
+  ["Three sausage rolls and no judgement please.", 1],
+  ["Hungover as. Pie me.", 1],
+  ["Got a long neck in the esky, just need a pie to go with it.", 1],
+  ["The missus thinks I'm at work. I'm at the servo. Same thing.", 1],
+  ["Bloody hell it's hot. Bloody hell it's a good pie.", 1],
+];
+const HAPPY_LINES = ["Cheers legend!", "Ripper.", "Too easy.", "Bloody beauty.", "Ta, love.", "You little ripper.", "Sweet as."];
+const SAD_LINES = ["Nah, I'm off.", "Yeah nah. Bye.", "Petrol Pete's it is.", "Cooked. Absolutely cooked."];
+const CAR_LINES = ["Fill 'er up, cobber.", "Me ute drinks more than me.", "Dunno what diesel is but I want it.", "Is that pie smell coming from here?", "Beep beep, legends."];
+const SEAGULL_LINE = "MINE. MINE. MINE.";
+
+/* ---------------- 2. UTILS ---------------- */
+const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
+const lerp = (a, b, t) => a + (b - a) * t;
+const dist = (ax, ay, bx, by) => Math.hypot(ax - bx, ay - by);
+function fmtNum(n) { n = Math.floor(n); const a = Math.abs(n); let s;
+  if (a < 1000) s = String(a); else if (a < 1e6) s = trim1(a / 1e3) + 'K'; else if (a < 1e9) s = trim1(a / 1e6) + 'M'; else s = trim1(a / 1e9) + 'B';
+  return (n < 0 ? '-' : '') + s; }
+function trim1(x) { return x >= 100 ? String(Math.round(x)) : String(Math.round(x * 10) / 10); }
+const fmt = n => '$' + fmtNum(n);
+function fmtTime(sec) { sec = Math.max(0, Math.floor(sec)); const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60);
+  if (h > 0) return h + 'h ' + m + 'm'; if (m > 0) return m + ' min'; return sec + ' sec'; }
+class RNG { constructor(seed) { this.s = (seed >>> 0) || 1; }
+  next() { let t = (this.s += 0x6D2B79F5); t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }
+  range(a, b) { return a + (b - a) * this.next(); } int(n) { return Math.floor(this.next() * n); } pick(arr) { return arr[this.int(arr.length)]; } }
+class Pool { constructor(make) { this.make = make; this.free = []; this.active = []; }
+  get() { const o = this.free.pop() || this.make(); this.active.push(o); return o; }
+  release(o) { const i = this.active.indexOf(o); if (i >= 0) { this.active[i] = this.active[this.active.length - 1]; this.active.pop(); } this.free.push(o); }
+  clear() { while (this.active.length) this.free.push(this.active.pop()); } }
+
+/* ---------------- 3. AUDIO (Web Audio API, all synthesised) ---------------- */
+class AudioEngine {
+  constructor() { this.ctx = null; this.sfxVol = 0.8; this.musVol = 0.45; this.musicOn = true; this.ready = false; this._musicTimer = null; this._beat = 0; this._nextNote = 0; }
+  init() {
+    if (this.ready || HEADLESS) return;
+    const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
+    this.ctx = new AC(); this.master = this.ctx.createGain(); this.master.connect(this.ctx.destination);
+    this.sfx = this.ctx.createGain(); this.sfx.gain.value = this.sfxVol; this.sfx.connect(this.master);
+    this.mus = this.ctx.createGain(); this.mus.gain.value = this.musVol; this.mus.connect(this.master);
+    this.ready = true; this.startMusic();
+  }
+  resume() { if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume(); }
+  setSfx(v) { this.sfxVol = v; if (this.sfx) this.sfx.gain.value = v; }
+  setMusic(v) { this.musVol = v; if (this.mus) this.mus.gain.value = v; }
+  tone(freq, dur, type = 'sine', vol = 0.3, dest = null, slide = null, when = 0) {
+    if (!this.ready) return; const c = this.ctx, t = c.currentTime + when;
+    const o = c.createOscillator(), g = c.createGain(); o.type = type; o.frequency.setValueAtTime(freq, t);
+    if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(20, slide), t + dur);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(dest || this.sfx); o.start(t); o.stop(t + dur + 0.02);
+  }
+  noise(dur, vol = 0.2, when = 0) {
+    if (!this.ready) return; const c = this.ctx, t = c.currentTime + when, n = Math.floor(c.sampleRate * dur);
+    const buf = c.createBuffer(1, n, c.sampleRate), d = buf.getChannelData(0); for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / n);
+    const s = c.createBufferSource(); s.buffer = buf; const g = c.createGain(); g.gain.value = vol; const f = c.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = 2000;
+    s.connect(f); f.connect(g); g.connect(this.sfx); s.start(t);
+  }
+  play(name) {
+    if (!this.ready) return;
+    switch (name) {
+      case 'chaching': this.tone(1320, 0.08, 'square', 0.12); this.tone(1980, 0.12, 'square', 0.12, null, null, 0.06); this.noise(0.05, 0.08); break;
+      case 'coin': this.tone(1760, 0.06, 'square', 0.07); break;
+      case 'pick': this.tone(520, 0.07, 'sine', 0.2, null, 900); break;
+      case 'drop': this.tone(420, 0.09, 'triangle', 0.22, null, 220); break;
+      case 'bounce': this.tone(140, 0.09, 'sine', 0.3, null, 80); break;
+      case 'build': [523, 659, 784, 1047].forEach((f, i) => this.tone(f, 0.22, 'triangle', 0.22, null, null, i * 0.09)); this.tone(1047, 0.5, 'sine', 0.15, null, null, 0.4); break;
+      case 'hire': [392, 523, 659, 784, 1047].forEach((f, i) => this.tone(f, 0.2, 'square', 0.1, null, null, i * 0.08)); break;
+      case 'squawk': this.tone(900, 0.16, 'sawtooth', 0.12, null, 600); this.tone(1100, 0.1, 'sawtooth', 0.08, null, 700, 0.12); break;
+      case 'horn': this.tone(220, 0.35, 'sawtooth', 0.12); this.tone(277, 0.35, 'sawtooth', 0.1); break;
+      case 'sad': this.tone(300, 0.2, 'triangle', 0.15, null, 180); break;
+      case 'pad': this.tone(260, 0.05, 'square', 0.05); break;
+      case 'fanfare': [523, 659, 784, 1047, 784, 1047, 1319].forEach((f, i) => this.tone(f, 0.25, 'triangle', 0.25, null, null, i * 0.11)); break;
+      case 'click': this.tone(800, 0.04, 'square', 0.06); break;
+      case 'engine': this.tone(70, 0.4, 'sawtooth', 0.05, null, 45); break;
+    }
+  }
+  startMusic() {
+    if (!this.ready || this._musicTimer) return;
+    this._nextNote = this.ctx.currentTime + 0.1; this._beat = 0;
+    this._musicTimer = setInterval(() => this._schedule(), 120);
+  }
+  _schedule() {
+    if (!this.ready) return; const c = this.ctx; const bpm = 88, beat = 60 / bpm, step = beat / 2;
+    const bass = [0, 0, 7, 0, 5, 5, 3, 0, 0, 0, 7, 0, 10, 10, 7, 5];
+    const lead = [0, -1, 7, -1, 9, -1, 7, 5, -1, 3, -1, 0, -1, 3, 5, -1, 7, -1, 9, 12, -1, 9, 7, -1, 5, -1, 3, -1, 0, -1, -1, -1];
+    const root = 110;
+    while (this._nextNote < c.currentTime + 0.3) {
+      const b = this._beat, t = this._nextNote;
+      if (b % 2 === 0) { const n = bass[(b / 2) % 16]; this.tone(root * Math.pow(2, n / 12), step * 1.6, 'triangle', 0.22, this.mus, null, t - c.currentTime); }
+      const l = lead[b % 32]; if (l >= 0 && (Math.floor(b / 32) % 4) !== 1) { this.tone(root * 4 * Math.pow(2, l / 12), step * 0.9, 'sine', 0.09, this.mus, null, t - c.currentTime); }
+      if (b % 4 === 0) this.tone(60, 0.08, 'sine', 0.25, this.mus, 40, t - c.currentTime);
+      if (b % 4 === 2) { const n = Math.floor(c.sampleRate * 0.04), buf = c.createBuffer(1, n, c.sampleRate), d = buf.getChannelData(0); for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / n) * 0.4; const s = c.createBufferSource(); s.buffer = buf; const g = c.createGain(); g.gain.value = 0.18; s.connect(g); g.connect(this.mus); s.start(t); }
+      this._nextNote += step; this._beat++;
+    }
+  }
+}
+
+/* ---------------- 4. ANALYTICS (PostHog, opt-out, no personal data) ---------------- */
+class Analytics {
+  constructor() { this.enabled = true; this.loaded = false; this.loading = false; this.queue = []; this.buffer = []; this.failed = false; }
+  setEnabled(on) { this.enabled = on; if (!on) this.queue.length = 0; else this._ensureLoaded(); if (this.loaded && window.posthog) { try { on ? window.posthog.opt_in_capturing() : window.posthog.opt_out_capturing(); } catch (e) { /* non-fatal */ } } }
+  track(event, props = {}) {
+    const rec = { event, props: Object.assign({}, props), ts: Date.now() };
+    this.buffer.push(rec); if (this.buffer.length > 200) this.buffer.shift();
+    if (!this.enabled || HEADLESS) return;
+    if (this.loaded && window.posthog) { window.posthog.capture(event, props); return; }
+    this.queue.push(rec); if (this.queue.length > 100) this.queue.shift();
+    this._ensureLoaded();
+  }
+  _ensureLoaded() {
+    if (HEADLESS || this.loaded || this.loading || this.failed) return;
+    if (POSTHOG_KEY.indexOf('REPLACE_ME') >= 0) { this.failed = true; console.info('[analytics] placeholder PostHog key: events kept in window.__servo.analytics.buffer only'); return; }
+    this.loading = true;
+    const s = document.createElement('script'); s.async = true; s.crossOrigin = 'anonymous';
+    s.src = POSTHOG_HOST.replace('.i.posthog.com', '-assets.i.posthog.com') + '/static/array.js';
+    s.onload = () => {
+      try {
+        const ph = window.posthog; if (!ph || typeof ph.init !== 'function') throw new Error('posthog not available');
+        ph.init(POSTHOG_KEY, { api_host: POSTHOG_HOST, autocapture: false, capture_pageview: false, capture_pageleave: false, disable_session_recording: true, person_profiles: 'identified_only', persistence: 'localStorage' });
+        this.loaded = true; this.loading = false; for (const q of this.queue) ph.capture(q.event, q.props); this.queue.length = 0;
+      } catch (e) { console.warn('[analytics] init failed', e); this.failed = true; this.loading = false; }
+    };
+    s.onerror = () => { console.warn('[analytics] blocked or offline'); this.failed = true; this.loading = false; };
+    document.head.appendChild(s);
+  }
+}
+
+/* ---------------- 5. SAVE ---------------- */
+const Save = {
+  storage() { try { return (typeof localStorage !== 'undefined') ? localStorage : null; } catch (e) { return null; } },
+  encode(obj) { const json = JSON.stringify(obj); if (typeof btoa === 'function') return 'SERVO1.' + btoa(unescape(encodeURIComponent(json))); return 'SERVO1.' + Buffer.from(json, 'utf8').toString('base64'); },
+  decode(code) { code = String(code || '').trim(); if (!code.startsWith('SERVO1.')) throw new Error('Not a Servo Empire save code'); const b = code.slice(7);
+    const json = (typeof atob === 'function') ? decodeURIComponent(escape(atob(b))) : Buffer.from(b, 'base64').toString('utf8'); return JSON.parse(json); },
+  migrate(data) {
+    if (!data || typeof data !== 'object') throw new Error('bad save');
+    let v = data.v || 1;
+    if (v === 1) { // v1: {money, built:[ids], player:{x,y}, lastSeen}
+      data = { v: 2, cash: data.money || 0, built: Object.fromEntries((data.built || []).map(id => [id, true])), paid: {}, upgrades: data.upgrades || {},
+        tray: data.tray || {}, shelf: data.shelf || {}, piles: data.piles || {}, player: data.player || null, carry: [], stats: data.stats || {}, flags: {},
+        firstPlay: data.firstPlay || data.lastSeen || Date.now(), lastSeen: data.lastSeen || Date.now(), totalEarned: data.money || 0, playTime: 0, time: 0,
+        settings: data.settings || {} };
+      v = 2;
+    }
+    if (v !== SAVE_VERSION) throw new Error('Unsupported save version ' + v);
+    return data;
+  },
+  write(obj) { const st = this.storage(); if (!st) return false; const json = JSON.stringify(obj);
+    try { const prev = st.getItem(SAVE_KEY); if (prev) st.setItem(SAVE_BACKUP_KEY, prev); st.setItem(SAVE_KEY, json); return true; } catch (e) { console.warn('save failed', e); return false; } },
+  read() { const st = this.storage(); if (!st) return null;
+    for (const key of [SAVE_KEY, SAVE_BACKUP_KEY]) { try { const raw = st.getItem(key); if (!raw) continue; return this.migrate(JSON.parse(raw)); } catch (e) { console.warn('save unreadable at', key, e); } }
+    return null; },
+  clear() { const st = this.storage(); if (!st) return; st.removeItem(SAVE_KEY); st.removeItem(SAVE_BACKUP_KEY); },
+};
+
+/* ---------------- 6. MAP, STATIONS, PATHFINDING ---------------- */
+const MAP = { W: 12, H: 22, laneX: 1.3, passLaneX: 0.45, shop: { x: 6, y: 2, w: 6, h: 16 }, door: [{ x: 6, y: 9 }, { x: 6, y: 10 }],
+  spawn: { x: 5.5, y: 21.6 }, exit: { x: 5.5, y: 21.6 }, playerStart: { x: 5.5, y: 7.5 }, serveSpot: { x: 9.5, y: 5.5 },
+  queue: [{ x: 8.5, y: 5.5 }, { x: 8.5, y: 6.5 }, { x: 8.5, y: 7.5 }, { x: 8.5, y: 8.5 }, { x: 7.5, y: 8.5 }, { x: 7.5, y: 7.5 }, { x: 7.5, y: 6.5 }, { x: 7.5, y: 5.5 }],
+  valSpot: { x: 8.5, y: 3.5 }, gavIdle: { x: 9.5, y: 9.5 }, shazzaIdle: { x: 5.5, y: 11.5 } };
+const STATIONS = [
+  { id: 'pump1',     name: 'Fuel Pump 1',      kind: 'pump',     cost: 10,   x: 4,  y: 5,  w: 1, h: 1, carStop: { x: 2.7, y: 5.5 },  pile: { x: 4.5, y: 6.5 },  collect: { x: 5.5, y: 6.5 },  icon: '⛽', blurb: 'Cars pull in, fill up, leave cash. Grab it.' },
+  { id: 'pie',       name: 'Pie Warmer',       kind: 'maker', item: 'pie',    cost: 30,   x: 10, y: 6,  w: 1, h: 1, interact: { x: 9.5, y: 6.5 },  icon: '🥧', blurb: 'Bakes pies onto the tray. Carry them to the counter.' },
+  { id: 'counter',   name: 'Front Counter',    kind: 'counter',  cost: 50,   x: 7,  y: 4,  w: 3, h: 1, interact: { x: 9.5, y: 5.5 }, pile: { x: 7.5, y: 4.5 }, icon: '🧾', blurb: 'Walk-ins queue here. Stand at the till to serve.' },
+  { id: 'coffee',    name: 'Coffee Machine',   kind: 'maker', item: 'coffee', cost: 150,  x: 10, y: 9,  w: 1, h: 1, interact: { x: 9.5, y: 9.5 },  icon: '🥤', blurb: 'Iced coffees. The lifeblood of the highway.' },
+  { id: 'pump2',     name: 'Fuel Pump 2',      kind: 'pump',     cost: 250,  x: 4,  y: 9,  w: 1, h: 1, carStop: { x: 2.7, y: 9.5 },  pile: { x: 4.5, y: 10.5 }, collect: { x: 5.5, y: 10.5 }, icon: '⛽', blurb: 'More pumps, more utes.' },
+  { id: 'office',    name: 'Back Office',      kind: 'office',   cost: 350,  x: 7,  y: 13, w: 2, h: 1, interact: { x: 8, y: 14.5 }, icon: '🛠️', blurb: 'Unlocks the upgrade board.' },
+  { id: 'gav',       name: 'Hire Gav',         kind: 'hire', staff: 'gav',    cost: 400,  x: 7,  y: 15, w: 1, h: 1, icon: '👷', blurb: 'Gav restocks the counter for you.' },
+  { id: 'val',       name: 'Hire Aunty Val',   kind: 'hire', staff: 'val',    cost: 650,  x: 8,  y: 15, w: 1, h: 1, icon: '👵', blurb: 'Val runs the till. The counter serves itself.' },
+  { id: 'roll',      name: 'Sausage Roll Oven',kind: 'maker', item: 'roll',   cost: 900,  x: 10, y: 12, w: 1, h: 1, interact: { x: 9.5, y: 12.5 }, icon: '🌭', blurb: 'Sausage rolls. Premium grease.' },
+  { id: 'pump3',     name: 'Fuel Pump 3',      kind: 'pump',     cost: 1400, x: 4,  y: 13, w: 1, h: 1, carStop: { x: 2.7, y: 13.5 }, pile: { x: 4.5, y: 14.5 }, collect: { x: 5.5, y: 14.5 }, icon: '⛽', blurb: 'Three pumps. Petrol Pete is sweating.' },
+  { id: 'shazza',    name: 'Hire Shazza',      kind: 'hire', staff: 'shazza', cost: 1800, x: 9,  y: 15, w: 1, h: 1, icon: '🧢', blurb: 'Shazza collects pump & car wash cash.' },
+  { id: 'billboard', name: 'Highway Billboard',kind: 'billboard',cost: 2400, x: 3,  y: 1,  w: 2, h: 1, icon: '🪧', blurb: '+50% customers and cars. Steal them from Petrol Pete.' },
+  { id: 'till2',     name: 'Second Till',      kind: 'till2',    cost: 3200, x: 10, y: 4,  w: 1, h: 1, icon: '💳', blurb: 'Serve faster, longer queue, +30% walk-ins.' },
+  { id: 'carwash',   name: 'Car Wash',         kind: 'carwash',  cost: 4000, x: 3,  y: 17, w: 2, h: 2, carStop: { x: 4, y: 18 }, pile: { x: 2.5, y: 19.5 }, collect: { x: 5.5, y: 18.5 }, icon: '🚿', blurb: 'Big money. Cars leave sparkling.' },
+  { id: 'bigpie',    name: 'The Big Pie',      kind: 'bigpie',   cost: 6000, x: 3,  y: 20, w: 2, h: 1, icon: '🥧', blurb: 'A Big Thing. Tourists lose their minds. +25% everything.' },
+];
+const STATION_BY_ID = Object.fromEntries(STATIONS.map(s => [s.id, s]));
+const ORDER = STATIONS.map(s => s.id);
+
+class Grid {
+  constructor() { this.W = MAP.W; this.H = MAP.H; this.blocked = new Uint8Array(this.W * this.H); }
+  idx(x, y) { return y * this.W + x; }
+  inb(x, y) { return x >= 0 && y >= 0 && x < this.W && y < this.H; }
+  isBlocked(x, y) { return !this.inb(x, y) || this.blocked[this.idx(x, y)] === 1; }
+  rebuild(built) {
+    this.blocked.fill(0);
+    for (let y = 0; y < this.H; y++) for (let x = 0; x < this.W; x++) {
+      if (x < 2) this.blocked[this.idx(x, y)] = 1; // highway
+      const s = MAP.shop; const onWall = (x === s.x || x === s.x + s.w - 1 || y === s.y || y === s.y + s.h - 1) && x >= s.x && x < s.x + s.w && y >= s.y && y < s.y + s.h;
+      if (onWall && !MAP.door.some(d => d.x === x && d.y === y)) this.blocked[this.idx(x, y)] = 1;
+    }
+    for (const st of STATIONS) { if (!built[st.id] || st.kind === 'hire') continue; for (let dy = 0; dy < st.h; dy++) for (let dx = 0; dx < st.w; dx++) this.blocked[this.idx(st.x + dx, st.y + dy)] = 1; }
+  }
+  reachable(x, y) { return this.path(x, y, MAP.spawn.x, MAP.spawn.y) !== null; }
+  nearestFree(x, y) { x = clamp(Math.floor(x), 0, this.W - 1); y = clamp(Math.floor(y), 0, this.H - 1); if (!this.isBlocked(x, y)) return { x, y };
+    for (let r = 1; r < 6; r++) for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) { if (!this.isBlocked(x + dx, y + dy)) return { x: x + dx, y: y + dy }; } return { x, y }; }
+  path(sx, sy, tx, ty) {
+    const s = this.nearestFree(sx, sy), t = this.nearestFree(tx, ty); const W = this.W, H = this.H, N = W * H;
+    const g = new Float32Array(N).fill(1e9), from = new Int32Array(N).fill(-1), closed = new Uint8Array(N); const open = [];
+    const si = this.idx(s.x, s.y), ti = this.idx(t.x, t.y); g[si] = 0; open.push(si);
+    const hfn = i => Math.abs((i % W) - t.x) + Math.abs(Math.floor(i / W) - t.y);
+    while (open.length) {
+      let bi = 0, bf = 1e18; for (let k = 0; k < open.length; k++) { const f = g[open[k]] + hfn(open[k]); if (f < bf) { bf = f; bi = k; } }
+      const cur = open[bi]; open[bi] = open[open.length - 1]; open.pop(); if (cur === ti) break; closed[cur] = 1;
+      const cx = cur % W, cy = Math.floor(cur / W);
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const nx = cx + dx, ny = cy + dy; if (this.isBlocked(nx, ny)) continue; const ni = ny * W + nx; if (closed[ni]) continue;
+        const ng = g[cur] + 1; if (ng < g[ni]) { g[ni] = ng; from[ni] = cur; if (open.indexOf(ni) < 0) open.push(ni); } }
+    }
+    if (from[ti] < 0 && ti !== si) return null;
+    const out = []; let c = ti; while (c !== si && c >= 0) { out.push({ x: (c % W) + 0.5, y: Math.floor(c / W) + 0.5 }); c = from[c]; } out.reverse(); return out;
+  }
+}
+
+/* ---------------- 7. SIM (pure simulation: no DOM, fixed timestep) ---------------- */
+const ITEMS = ['pie', 'coffee', 'roll'];
+const CUST_COLORS = ['#e4572e', '#3d9be9', '#8bc34a', '#f3c623', '#9b5de5', '#f15bb5', '#00bbf9', '#ff7b54', '#6c757d', '#2ec4b6'];
+const CAR_COLORS = ['#f2f2f2', '#c0392b', '#2c3e50', '#f39c12', '#16a085', '#7f8c8d', '#8e44ad', '#d35400', '#ecf0f1', '#27ae60'];
+class Sim {
+  constructor(opts = {}) {
+    this.rng = new RNG(opts.seed || 1337);
+    this.now = opts.now || (() => Date.now());
+    this.track = opts.track || (() => {});
+    this.fx = [];
+    this.input = { x: 0, y: 0 };
+    this.grid = new Grid();
+    this.spicy = true;
+    this.reset();
+  }
+  reset() {
+    this.time = 0; this.playTime = 0; this.cash = ECON.startCash; this.totalEarned = 0;
+    this.built = {}; this.paid = {}; this.upgrades = { walk: 0, carry: 0, station: 0, price: 0, staff: 0 };
+    this.tray = { pie: 0, coffee: 0, roll: 0 }; this.cookT = { pie: 0, coffee: 0, roll: 0 };
+    this.shelf = { pie: 0, coffee: 0, roll: 0 }; this.piles = {};
+    this.player = { x: MAP.playerStart.x, y: MAP.playerStart.y, carry: [], face: 1, moving: false, pickT: 0, anim: 0, atCounter: false };
+    this.customers = []; this.cars = []; this.seagulls = []; this.staff = {};
+    this.custT = 4; this.carT = {}; this.passT = 2; this.chaosT = ECON.chaosFirst; this.event = null; this.eventT = 0;
+    this.serveT = 0; this.bounce = {}; this.inOffice = false; this.padTick = 0;
+    this.stats = { unlocks: 0, served: 0, lost: 0, shooed: 0, stolen: 0, cars: 0, events: 0, upgrades: 0 };
+    this.flags = {}; this.firstPlay = this.now(); this.lastSeen = this.now();
+    this.grid.rebuild(this.built);
+  }
+  /* --- derived numbers --- */
+  get walkSpeed() { return ECON.walkBase * (1 + 0.12 * this.upgrades.walk); }
+  get carryCap() { return ECON.carryBase + 2 * this.upgrades.carry; }
+  get stationMult() { return 1 + 0.15 * this.upgrades.station; }
+  get priceMult() { return (1 + 0.2 * this.upgrades.price) * (this.built.bigpie ? ECON.bigPieMult : 1); }
+  get staffMult() { return 1 + 0.2 * this.upgrades.staff; }
+  get baseTraffic() { return (this.built.billboard ? ECON.billboardMult : 1) * (this.built.till2 ? ECON.till2Mult : 1) * (this.built.bigpie ? ECON.bigPieMult : 1); }
+  get trafficMult() { return this.baseTraffic * (this.event === 'rush' ? ECON.rushMult : 1); }
+  custInterval(n) { return ECON.customer.interval / (1 + ECON.customer.perItem * (n - 1)); }
+  get queueMax() { return ECON.customer.queueMax + (this.built.till2 ? 2 : 0); }
+  get staffCount() { return Object.keys(this.staff).length; }
+  price(item) { return Math.round(ECON.makers[item].price * this.priceMult); }
+  pumpPay() { return Math.round(ECON.pump.pay * this.priceMult); }
+  washPay() { return Math.round(ECON.carwash.pay * this.priceMult); }
+  unlockedItems() { return ITEMS.filter(i => this.built[i]); }
+  visiblePads() { const out = []; for (const id of ORDER) { if (!this.built[id]) { out.push(id); if (out.length >= 2) break; } } return out; }
+  nextPad() { for (const id of ORDER) if (!this.built[id]) return id; return null; }
+  allBuilt() { return ORDER.every(id => this.built[id]); }
+  minutesSinceFirst() { return Math.round((this.now() - this.firstPlay) / 60000); }
+  upgradeCost(id) { const u = UPGRADES.find(u => u.id === id); const lv = this.upgrades[id] || 0; return lv >= u.max ? Infinity : Math.round(u.base * Math.pow(u.mult, lv)); }
+  canBuyUpgrade(id) { return this.cash >= this.upgradeCost(id); }
+  buyUpgrade(id) {
+    const cost = this.upgradeCost(id); if (!(this.cash >= cost)) return false;
+    this.cash -= cost; this.upgrades[id]++; this.stats.upgrades++;
+    this.fx.push({ t: 'upgrade', id }); this.track('upgrade_bought', { upgrade: id, level: this.upgrades[id], cost, minutes_since_first_play: this.minutesSinceFirst() });
+    return true;
+  }
+  addCash(amount, x, y, src) { if (amount <= 0) return; this.cash += amount; this.totalEarned += amount; this.fx.push({ t: 'cash', x, y, amount, src }); }
+  bump(id) { this.bounce[id] = 1; }
+  line() { const pool = this.spicy ? LINES : LINES.filter(l => !l[1]); return this.rng.pick(pool)[0]; }
+  waitingFor(item) { let n = 0; for (const c of this.customers) if (c.want === item && (c.state === 'queue' || c.state === 'enter' || c.state === 'shift')) n++; return n; }
+  queueCount() { let n = 0; for (const c of this.customers) if (c.state !== 'leave') n++; return n; }
+  /* --- geometry --- */
+  nearRect(p, st, r) { const cx = clamp(p.x, st.x, st.x + st.w), cy = clamp(p.y, st.y, st.y + st.h); return dist(p.x, p.y, cx, cy) < r; }
+  onPad(p, st) { const m = 0.35; return p.x > st.x - m && p.x < st.x + st.w + m && p.y > st.y - m && p.y < st.y + st.h + m; }
+  circleHits(x, y, r) {
+    const x0 = Math.floor(x - r), x1 = Math.floor(x + r), y0 = Math.floor(y - r), y1 = Math.floor(y + r);
+    for (let ty = y0; ty <= y1; ty++) for (let tx = x0; tx <= x1; tx++) { if (!this.grid.isBlocked(tx, ty)) continue;
+      const cx = clamp(x, tx, tx + 1), cy = clamp(y, ty, ty + 1); if ((x - cx) * (x - cx) + (y - cy) * (y - cy) < r * r) return true; }
+    return false;
+  }
+  unstick(a, r) { // if an agent is inside a blocked tile, slide it to the nearest free spot
+    if (!this.circleHits(a.x, a.y, r)) return;
+    let best = null, bd = 1e9;
+    for (let ty = Math.floor(a.y) - 2; ty <= Math.floor(a.y) + 2; ty++) for (let tx = Math.floor(a.x) - 2; tx <= Math.floor(a.x) + 2; tx++) {
+      if (this.grid.isBlocked(tx, ty)) continue; const cx = clamp(a.x, tx + r, tx + 1 - r), cy = clamp(a.y, ty + r, ty + 1 - r);
+      if (this.circleHits(cx, cy, r)) continue; const d = dist(a.x, a.y, cx, cy); if (d < bd) { bd = d; best = { x: cx, y: cy }; } }
+    if (best) { a.x = best.x; a.y = best.y; } else { const f = this.grid.nearestFree(a.x, a.y); a.x = f.x + 0.5; a.y = f.y + 0.5; }
+    if (a.path && a.path.length) { const end = a.path[a.path.length - 1]; a.path = this.grid.path(a.x, a.y, end.x, end.y) || [end]; }
+  }
+  ensureReachable(a) { // a new station can wall off a pocket (e.g. the strip behind the counter): move anyone trapped there to the nearest connected free spot
+    if (this.grid.reachable(a.x, a.y)) return;
+    let best = null, bd = 1e9; for (let ty = 0; ty < MAP.H; ty++) for (let tx = 2; tx < MAP.W; tx++) { if (this.grid.isBlocked(tx, ty)) continue; const d = dist(a.x, a.y, tx + 0.5, ty + 0.5); if (d < bd && this.grid.reachable(tx + 0.5, ty + 0.5)) { bd = d; best = { x: tx + 0.5, y: ty + 0.5 }; } }
+    if (best) { a.x = best.x; a.y = best.y; if (a.path && a.path.length) { const end = a.path[a.path.length - 1]; a.path = this.grid.path(a.x, a.y, end.x, end.y) || [end]; } }
+  }
+  moveCircle(a, dx, dy, r) {
+    const nx = clamp(a.x + dx, r, MAP.W - r); if (!this.circleHits(nx, a.y, r)) a.x = nx;
+    const ny = clamp(a.y + dy, r, MAP.H - r); if (!this.circleHits(a.x, ny, r)) a.y = ny;
+  }
+  moveAlong(a, speed, dt) { // follows a.path (array of points); returns true when finished
+    if (!a.path || a.path.length === 0) return true;
+    let budget = speed * dt;
+    while (budget > 0 && a.path.length) {
+      const p = a.path[0]; const d = dist(a.x, a.y, p.x, p.y);
+      if (d <= budget) { a.x = p.x; a.y = p.y; a.path.shift(); budget -= d; }
+      else { a.x += (p.x - a.x) / d * budget; a.y += (p.y - a.y) / d * budget; if (Math.abs(p.x - a.x) > 0.01) a.face = p.x > a.x ? 1 : -1; budget = 0; }
+    }
+    a.anim += dt * 10;
+    if (a.path.length && this.grid.isBlocked(Math.floor(a.path[0].x), Math.floor(a.path[0].y))) { const end = a.path[a.path.length - 1]; a.path = this.grid.path(a.x, a.y, end.x, end.y) || [end]; }
+    return a.path.length === 0;
+  }
+  pathTo(a, x, y) { a.path = this.grid.path(a.x, a.y, x, y) || []; const last = a.path[a.path.length - 1]; if (last) { last.x = x; last.y = y; } else a.path = [{ x, y }]; }
+  /* --- main step --- */
+  step(dt) {
+    this.time += dt; this.playTime += dt;
+    this.updatePlayer(dt); this.updatePads(dt); this.updateMakers(dt); this.updateCars(dt);
+    this.updateCustomers(dt); this.updateStaff(dt); this.updateChaos(dt);
+    for (const k in this.bounce) { this.bounce[k] -= dt * 4; if (this.bounce[k] <= 0) delete this.bounce[k]; }
+  }
+  updatePlayer(dt) {
+    const p = this.player; let ix = this.input.x || 0, iy = this.input.y || 0; const len = Math.hypot(ix, iy);
+    if (len > 1) { ix /= len; iy /= len; }
+    p.moving = len > 0.08;
+    if (p.moving) { const sp = this.walkSpeed * Math.min(1, len); this.moveCircle(p, ix * sp * dt, iy * sp * dt, 0.3); if (Math.abs(ix) > 0.15) p.face = ix > 0 ? 1 : -1; p.anim += dt * 10; }
+    p.pickT -= dt;
+    for (const id in this.piles) { const amt = this.piles[id]; if (amt <= 0) continue; const pp = STATION_BY_ID[id].pile; if (dist(p.x, p.y, pp.x, pp.y) < 1.15) { this.piles[id] = 0; this.addCash(Math.floor(amt), pp.x, pp.y, id); } }
+    for (const item of this.unlockedItems()) { const st = STATION_BY_ID[item];
+      if (this.tray[item] > 0 && p.carry.length < this.carryCap && p.pickT <= 0 && this.nearRect(p, st, 0.95)) { this.tray[item]--; p.carry.push(item); p.pickT = 0.1; this.fx.push({ t: 'pick', x: st.x + 0.5, y: st.y + 0.5, item }); this.bump(item); } }
+    p.atCounter = false;
+    if (this.built.counter) { const st = STATION_BY_ID.counter; const near = this.nearRect(p, st, 1.05) || (this.built.till2 && this.nearRect(p, STATION_BY_ID.till2, 1.05));
+      p.atCounter = !!near;
+      if (near && p.carry.length && p.pickT <= 0) { const i = p.carry.findIndex(it => this.shelf[it] < ECON.shelfCap);
+        if (i >= 0) { const it = p.carry.splice(i, 1)[0]; this.shelf[it]++; p.pickT = 0.08; this.fx.push({ t: 'drop', x: st.x + 1.5, y: st.y + 0.5, item: it }); this.bump('counter'); } } }
+    if (this.built.office) { const near = this.nearRect(p, STATION_BY_ID.office, 0.9); // stand still at the desk for half a second to open the board (walking past does nothing)
+      if (near && !p.moving && !this.inOffice) { this.officeT = (this.officeT || 0) + dt; if (this.officeT >= 0.5) { this.inOffice = true; this.fx.push({ t: 'office' }); } } else this.officeT = 0; if (!near) this.inOffice = false; }
+  }
+  updatePads(dt) {
+    const p = this.player; this.padTick += dt;
+    for (const id of this.visiblePads()) { const st = STATION_BY_ID[id]; if (!this.onPad(p, st)) continue;
+      const paid = this.paid[id] || 0, remaining = st.cost - paid; if (remaining <= 0 || this.cash <= 0) continue;
+      const rate = Math.max(st.cost / ECON.padFillSec, 4); const spend = Math.min(this.cash, remaining, rate * dt);
+      this.cash -= spend; this.paid[id] = paid + spend;
+      if (this.padTick > 0.12) { this.padTick = 0; this.fx.push({ t: 'pad', x: st.x + st.w / 2, y: st.y + st.h / 2, spend }); }
+      if (this.paid[id] >= st.cost - 1e-6) this.build(id);
+    }
+  }
+  build(id) {
+    const st = STATION_BY_ID[id]; this.built[id] = true; this.paid[id] = st.cost; this.stats.unlocks++;
+    this.grid.rebuild(this.built); this.unstick(this.player, 0.3); this.ensureReachable(this.player);
+    for (const c of this.customers) { this.unstick(c, 0.2); this.ensureReachable(c); } for (const k in this.staff) { this.unstick(this.staff[k], 0.2); if (k !== 'val') this.ensureReachable(this.staff[k]); }
+    if (st.kind === 'pump' || st.kind === 'carwash') { this.carT[id] = 1.5; this.piles[id] = this.piles[id] || 0; }
+    if (st.kind === 'counter') this.piles.counter = this.piles.counter || 0;
+    if (st.kind === 'hire') { this.hire(st.staff); }
+    this.fx.push({ t: 'build', id, x: st.x + st.w / 2, y: st.y + st.h / 2 });
+    this.track('unlock_bought', { station: id, index: ORDER.indexOf(id) + 1, cost: st.cost, minutes_since_first_play: this.minutesSinceFirst(), play_minutes: Math.round(this.playTime / 60) });
+    if (this.allBuilt() && !this.flags.mapComplete) { this.flags.mapComplete = true; this.fx.push({ t: 'complete' }); this.track('map_complete', { minutes_since_first_play: this.minutesSinceFirst(), play_minutes: Math.round(this.playTime / 60), total_earned: Math.floor(this.totalEarned) }); }
+  }
+  hire(who) {
+    const spot = who === 'gav' ? MAP.gavIdle : who === 'val' ? MAP.valSpot : MAP.shazzaIdle; const st = STATIONS.find(s => s.staff === who);
+    this.staff[who] = { id: who, x: st.x + 0.5, y: st.y + 0.5, path: [], state: 'idle', carry: [], item: null, t: 0, anim: 0, face: 1, target: null, bubble: STAFF_INFO[who].hireLine, bubbleT: 4, home: spot };
+    this.fx.push({ t: 'hire', staff: who }); this.track('staff_hired', { staff: who, minutes_since_first_play: this.minutesSinceFirst() });
+  }
+  updateMakers(dt) {
+    for (const item of this.unlockedItems()) { const m = ECON.makers[item]; if (this.tray[item] >= m.cap) { this.cookT[item] = 0; continue; }
+      this.cookT[item] += dt * this.stationMult; if (this.cookT[item] >= m.rate) { this.cookT[item] -= m.rate; this.tray[item]++; this.fx.push({ t: 'cooked', item }); this.bump(item); } }
+  }
+  carBusy(id) { return this.cars.some(c => c.station === id && c.state !== 'leave'); }
+  spawnCar(id, forceUte) {
+    const st = STATION_BY_ID[id]; const stop = st.carStop; const kind = forceUte ? 'ute' : this.rng.pick(['ute', 'ute', 'sedan', 'sedan', 'van', 'wagon']);
+    const pts = id === 'carwash' ? [{ x: MAP.laneX, y: -1.5 }, { x: MAP.laneX, y: 15 }, { x: 2.6, y: 16.4 }, { x: stop.x, y: stop.y }] : [{ x: MAP.laneX, y: -1.5 }, { x: MAP.laneX, y: stop.y - 2.3 }, { x: stop.x, y: stop.y }];
+    this.cars.push({ station: id, state: 'arrive', path: pts.slice(1), x: pts[0].x, y: pts[0].y, kind, color: this.rng.pick(CAR_COLORS), t: 0, anim: 0, face: 1, bubble: this.rng.next() < 0.3 ? this.rng.pick(CAR_LINES) : null, bubbleT: 4, pass: false });
+    this.stats.cars++;
+  }
+  updateCars(dt) {
+    for (const id of ['pump1', 'pump2', 'pump3', 'carwash']) { if (!this.built[id]) continue; const cfg = id === 'carwash' ? ECON.carwash : ECON.pump;
+      this.carT[id] = (this.carT[id] === undefined ? cfg.interval * 0.4 : this.carT[id]) - dt * this.trafficMult * Math.sqrt(this.stationMult);
+      if (this.carT[id] <= 0) { if (!this.carBusy(id) && this.cars.length < 14) { this.carT[id] = cfg.interval * this.rng.range(0.75, 1.25); this.spawnCar(id, this.event === 'rush'); } else this.carT[id] = 0; } }
+    this.passT -= dt; if (this.passT <= 0) { this.passT = this.rng.range(3, 7); if (this.cars.length < 16) this.cars.push({ station: null, state: 'pass', path: [{ x: MAP.passLaneX, y: -2 }], x: MAP.passLaneX, y: MAP.H + 2, kind: this.rng.pick(['sedan', 'ute', 'truck']), color: this.rng.pick(CAR_COLORS), t: 0, anim: 0, face: -1, bubble: null, bubbleT: 0, pass: true }); }
+    for (let i = this.cars.length - 1; i >= 0; i--) { const c = this.cars[i]; c.bubbleT -= dt; if (c.bubbleT <= 0) c.bubble = null;
+      if (c.state === 'pass') { if (this.moveAlong(c, 6, dt)) this.cars.splice(i, 1); continue; }
+      const st = STATION_BY_ID[c.station]; const cfg = c.station === 'carwash' ? ECON.carwash : ECON.pump;
+      if (c.state === 'arrive') { let blocked = false; if (c.x < 2) for (const o of this.cars) { if (o !== c && o.state === 'arrive' && o.x < 2.2 && o.y > c.y && o.y - c.y < 1.9) { blocked = true; break; } }
+        if (!blocked && this.moveAlong(c, 5, dt)) { c.state = 'fill'; c.t = (c.station === 'carwash' ? cfg.washTime : cfg.fillTime) / this.stationMult; } }
+      else if (c.state === 'fill') { c.t -= dt; this.bounce[c.station] = Math.max(this.bounce[c.station] || 0, 0.3);
+        if (c.t <= 0) { const pay = c.station === 'carwash' ? this.washPay() : this.pumpPay(); this.piles[c.station] = (this.piles[c.station] || 0) + pay; this.fx.push({ t: 'paid', x: st.pile.x, y: st.pile.y, amount: pay, station: c.station }); this.bump(c.station);
+          c.state = 'leave'; c.path = c.station === 'carwash' ? [{ x: 2.6, y: 19.6 }, { x: MAP.laneX, y: 20.8 }, { x: MAP.laneX, y: MAP.H + 2 }] : [{ x: MAP.laneX, y: c.y + 2.3 }, { x: MAP.laneX, y: MAP.H + 2 }]; } }
+      else if (c.state === 'leave') { if (this.moveAlong(c, 5.5, dt)) this.cars.splice(i, 1); } }
+  }
+  spawnCustomer() {
+    const items = this.unlockedItems(); if (!items.length) return;
+    // customers mostly want what's on display (1 + shelf stock weighting), so restocking is visibly rewarded
+    const weights = items.map(it => 1 + this.shelf[it]); let pickv = this.rng.next() * weights.reduce((a, b) => a + b, 0), want = items[items.length - 1]; for (let i = 0; i < items.length; i++) { pickv -= weights[i]; if (pickv <= 0) { want = items[i]; break; } }
+    const slot = this.freeSlot(); if (slot < 0) return;
+    const c = { x: MAP.spawn.x, y: MAP.spawn.y, path: [], state: 'enter', want, slot, patience: ECON.customer.patience, color: this.rng.pick(CUST_COLORS), hat: this.rng.pick(['none', 'none', 'cap', 'akubra', 'hivis', 'beanie']), skin: this.rng.pick(['#f1c27d', '#e0ac69', '#c68642', '#8d5524', '#ffdbac']), anim: 0, face: 1, bubble: this.rng.next() < 0.4 ? this.line() : null, bubbleT: 4.5, happy: false };
+    this.pathTo(c, MAP.queue[slot].x, MAP.queue[slot].y); this.customers.push(c);
+  }
+  freeSlot() { const used = new Set(this.customers.filter(c => c.state !== 'leave').map(c => c.slot)); for (let i = 0; i < this.queueMax; i++) if (!used.has(i)) return i; return -1; }
+  updateCustomers(dt) {
+    const items = this.unlockedItems();
+    if (this.built.counter && items.length) { this.custT -= dt * this.trafficMult;
+      if (this.custT <= 0) { this.custT = this.custInterval(items.length) * this.rng.range(0.7, 1.3); if (this.queueCount() < this.queueMax && this.customers.length < 30) this.spawnCustomer(); } }
+    let serving = null;
+    for (let i = this.customers.length - 1; i >= 0; i--) { const c = this.customers[i]; c.bubbleT -= dt; if (c.bubbleT <= 0) c.bubble = null;
+      if (c.state === 'enter' || c.state === 'shift') { if (this.moveAlong(c, 2.6, dt)) c.state = 'queue'; }
+      else if (c.state === 'queue') { c.patience -= dt; if (c.slot === 0) serving = c;
+        if (c.patience <= 0) { this.stats.lost++; c.state = 'leave'; c.bubble = this.rng.pick(SAD_LINES); c.bubbleT = 3; this.pathTo(c, MAP.exit.x, MAP.exit.y); this.fx.push({ t: 'lost', x: c.x, y: c.y }); this.compactQueue(); } }
+      else if (c.state === 'leave') { if (this.moveAlong(c, 3.2, dt)) this.customers.splice(i, 1); } }
+    if (serving && this.shelf[serving.want] > 0 && (this.staff.val || this.player.atCounter)) {
+      const speed = (this.staff.val ? this.staffMult : 1) * (this.built.till2 ? 1.5 : 1); this.serveT += dt * speed;
+      if (this.serveT >= ECON.customer.serveTime) { this.serveT = 0; this.shelf[serving.want]--; const pay = this.price(serving.want); this.piles.counter = (this.piles.counter || 0) + pay; this.stats.served++;
+        const st = STATION_BY_ID.counter; this.fx.push({ t: 'serve', x: st.pile.x, y: st.pile.y, amount: pay, item: serving.want }); this.bump('counter'); if (this.staff.val) this.staff.val.anim += 3;
+        serving.state = 'leave'; serving.happy = true; if (this.rng.next() < 0.5) { serving.bubble = this.rng.pick(HAPPY_LINES); serving.bubbleT = 2.5; } this.pathTo(serving, MAP.exit.x, MAP.exit.y); this.compactQueue(); }
+    } else this.serveT = Math.max(0, this.serveT - dt);
+  }
+  compactQueue() { const q = this.customers.filter(c => c.state !== 'leave').sort((a, b) => a.slot - b.slot);
+    q.forEach((c, i) => { if (c.slot !== i) { c.slot = i; if (c.state === 'queue' || c.state === 'shift') { c.state = 'shift'; this.pathTo(c, MAP.queue[i].x, MAP.queue[i].y); } else { this.pathTo(c, MAP.queue[i].x, MAP.queue[i].y); } } }); }
+  updateStaff(dt) {
+    const sp = ECON.staffSpeedBase * this.staffMult;
+    for (const who in this.staff) { const s = this.staff[who]; s.bubbleT -= dt; if (s.bubbleT <= 0) s.bubble = null; s.t -= dt;
+      if (who === 'val') { if (dist(s.x, s.y, MAP.valSpot.x, MAP.valSpot.y) > 0.1) { if (!s.path.length) this.pathTo(s, MAP.valSpot.x, MAP.valSpot.y); this.moveAlong(s, sp, dt); } continue; }
+      if (who === 'gav') this.updateGav(s, sp, dt); else this.updateShazza(s, sp, dt); }
+  }
+  updateGav(s, sp, dt) {
+    const cap = ECON.staffCarry + this.upgrades.carry;
+    if (s.state === 'idle') { if (s.t > 0) { if (dist(s.x, s.y, s.home.x, s.home.y) > 0.2) { if (!s.path.length) this.pathTo(s, s.home.x, s.home.y); this.moveAlong(s, sp, dt); } return; }
+      s.t = 0.4; let best = null, bs = 0;
+      for (const item of this.unlockedItems()) { if (this.tray[item] <= 0 || this.shelf[item] >= ECON.shelfCap) continue; const score = (ECON.shelfCap - this.shelf[item]) + 3 * this.waitingFor(item) + (this.tray[item] >= ECON.makers[item].cap ? 2 : 0); if (score > bs) { bs = score; best = item; } }
+      if (best) { s.item = best; s.state = 'toMaker'; const st = STATION_BY_ID[best]; this.pathTo(s, st.interact.x, st.interact.y); }
+    } else if (s.state === 'toMaker') { if (this.moveAlong(s, sp, dt)) { s.state = 'pick'; s.t = 0; } }
+    else if (s.state === 'pick') { if (s.t <= 0 && this.tray[s.item] > 0 && s.carry.length < cap) { this.tray[s.item]--; s.carry.push(s.item); s.t = 0.15 / this.staffMult; this.bump(s.item); }
+      if (this.tray[s.item] <= 0 || s.carry.length >= cap) { if (s.carry.length) { s.state = 'toCounter'; this.pathTo(s, MAP.serveSpot.x, MAP.serveSpot.y); } else { s.state = 'idle'; s.t = 0; } } }
+    else if (s.state === 'toCounter') { if (this.moveAlong(s, sp, dt)) { s.state = 'drop'; s.t = 0; } }
+    else if (s.state === 'drop') { if (s.t <= 0) { const i = s.carry.findIndex(it => this.shelf[it] < ECON.shelfCap); if (i >= 0) { const it = s.carry.splice(i, 1)[0]; this.shelf[it]++; s.t = 0.1 / this.staffMult; this.bump('counter'); this.fx.push({ t: 'drop', x: 8.5, y: 4.5, item: it, staff: true }); } else s.t = 0.5; }
+      if (!s.carry.length) { s.state = 'idle'; s.t = 0; } }
+  }
+  updateShazza(s, sp, dt) {
+    if (s.state === 'idle') { if (s.t > 0) { if (dist(s.x, s.y, s.home.x, s.home.y) > 0.2) { if (!s.path.length) this.pathTo(s, s.home.x, s.home.y); this.moveAlong(s, sp, dt); } return; }
+      s.t = 0.5; let best = null, ba = 0; for (const id of ['pump1', 'pump2', 'pump3', 'carwash']) { const a = this.piles[id] || 0; if (a > ba) { ba = a; best = id; } }
+      if (best) { s.target = best; s.state = 'toPile'; const st = STATION_BY_ID[best]; this.pathTo(s, st.collect.x, st.collect.y); }
+    } else if (s.state === 'toPile') { if (this.moveAlong(s, sp, dt)) { const amt = this.piles[s.target] || 0; const pp = STATION_BY_ID[s.target].pile; if (amt > 0) { this.piles[s.target] = 0; this.addCash(Math.floor(amt), pp.x, pp.y, 'shazza'); } s.state = 'idle'; s.t = 0.2; } }
+  }
+  updateChaos(dt) {
+    if (this.built.counter && !this.event) { this.chaosT -= dt; if (this.chaosT <= 0) { this.chaosT = this.rng.range(ECON.chaosMin, ECON.chaosMax); this.startEvent(); } }
+    if (this.event === 'rush') { this.eventT -= dt; if (this.eventT <= 0) { this.event = null; this.fx.push({ t: 'eventEnd', kind: 'rush' }); } }
+    if (this.event === 'seagulls') { this.eventT -= dt; if (!this.seagulls.length || this.eventT <= 0) { this.seagulls.length = 0; this.event = null; this.fx.push({ t: 'eventEnd', kind: 'seagulls' }); } }
+    const p = this.player; const tray = STATION_BY_ID.pie;
+    for (let i = this.seagulls.length - 1; i >= 0; i--) { const g = this.seagulls[i]; g.anim += dt * 14;
+      if (g.state === 'in') { const d = dist(g.x, g.y, g.tx, g.ty); const spd = 3.2 * dt; if (d <= spd) { g.x = g.tx; g.y = g.ty; g.state = 'hover'; g.t = ECON.seagullHover; } else { g.x += (g.tx - g.x) / d * spd; g.y += (g.ty - g.y) / d * spd; } }
+      else if (g.state === 'hover') { g.t -= dt; g.y += Math.sin(g.anim * 0.5) * 0.004;
+        if (dist(p.x, p.y, g.x, g.y) < 1.2) { g.state = 'flee'; this.stats.shooed++; this.fx.push({ t: 'shoo', x: g.x, y: g.y }); }
+        else if (g.t <= 0) { g.state = 'flee'; if (this.tray.pie > 0) { this.tray.pie--; g.carrying = true; this.stats.stolen++; this.fx.push({ t: 'steal', x: tray.x + 0.5, y: tray.y + 0.5 }); } } }
+      else if (g.state === 'flee') { g.x += 4.5 * dt * (g.x > 6 ? 1 : -1) * 0.6; g.y -= 4.5 * dt; if (g.y < -2) this.seagulls.splice(i, 1); } }
+  }
+  startEvent() {
+    const canGulls = this.built.pie && this.tray.pie > 0; const kind = (canGulls && this.rng.next() < 0.5) ? 'seagulls' : 'rush';
+    this.event = kind; this.stats.events++; this.fx.push({ t: 'event', kind }); this.track('chaos_event_seen', { event: kind, minutes_since_first_play: this.minutesSinceFirst() });
+    if (kind === 'rush') { this.eventT = ECON.rushDur; for (const id of ['pump1', 'pump2', 'pump3']) if (this.built[id] && !this.carBusy(id)) this.spawnCar(id, true); this.custT = Math.min(this.custT, 0.5); }
+    else { this.eventT = 25; const tray = STATION_BY_ID.pie; const offs = [[-0.7, -0.5], [0.6, -0.8], [-0.1, 0.8]];
+      for (let i = 0; i < ECON.seagulls; i++) this.seagulls.push({ x: 7 + i * 1.6, y: -1.5 - i * 0.8, tx: tray.x + 0.5 + offs[i][0], ty: tray.y + 0.5 + offs[i][1], state: 'in', t: 0, anim: i * 2, carrying: false }); }
+  }
+  /* --- guidance: what should the player do next? --- */
+  nextGoal() {
+    const p = this.player;
+    for (const id of this.visiblePads()) { const st = STATION_BY_ID[id]; if (this.cash >= st.cost - (this.paid[id] || 0) - 0.5) return { type: 'pad', id, x: st.x + st.w / 2, y: st.y + st.h / 2, label: 'Build: ' + st.name }; }
+    // carrying stock: head to the counter if there's room for most of it (hysteresis: don't flip-flop as Val frees single slots)
+    if (p.carry.length && this.built.counter) { const room = ITEMS.reduce((n, it) => n + Math.max(0, ECON.shelfCap - this.shelf[it]) * (p.carry.includes(it) ? 1 : 0), 0); const wasCarry = this._lastGoal === 'carry';
+      if (room >= Math.min(p.carry.length, wasCarry ? 1 : 2)) { this._lastGoal = 'carry'; return { type: 'carry', id: 'counter', x: MAP.serveSpot.x, y: MAP.serveSpot.y, label: 'Drop at the counter' }; } }
+    this._lastGoal = null; const carryRoom = p.carry.length && this.built.counter && p.carry.some(it => this.shelf[it] < ECON.shelfCap);
+    let bestPile = null, ba = 0; for (const id in this.piles) { if ((this.piles[id] || 0) > ba) { ba = this.piles[id]; bestPile = id; } }
+    if (bestPile && ba >= 1 && !(this.staff.shazza && bestPile !== 'counter')) { const pp = STATION_BY_ID[bestPile].pile; return { type: 'pile', id: bestPile, x: pp.x, y: pp.y, label: 'Grab the cash ' + fmt(ba) }; }
+    if (this.built.counter && p.carry.length < this.carryCap && !this.staff.gav) { let best = null, bs = 0;
+      for (const item of this.unlockedItems()) { if (this.tray[item] <= 0 || this.shelf[item] >= ECON.shelfCap) continue; const score = (ECON.shelfCap - this.shelf[item]) + 4 * this.waitingFor(item) + this.tray[item]; if (score > bs && (this.waitingFor(item) > 0 || this.shelf[item] < 4 || this.tray[item] >= ECON.makers[item].cap - 1)) { bs = score; best = item; } }
+      if (best) { const st = STATION_BY_ID[best]; return { type: 'restock', id: best, x: st.interact.x, y: st.interact.y, label: 'Grab ' + ECON.makers[best].name + 's' }; } }
+    if (this.built.counter && !this.staff.val) { const front = this.customers.find(c => c.slot === 0 && c.state === 'queue'); if (front && this.shelf[front.want] > 0) return { type: 'serve', id: 'counter', x: MAP.serveSpot.x, y: MAP.serveSpot.y, label: 'Serve the queue' }; }
+    if (bestPile && ba >= 1) { const pp = STATION_BY_ID[bestPile].pile; return { type: 'pile', id: bestPile, x: pp.x, y: pp.y, label: 'Grab the cash ' + fmt(ba) }; }
+    if (carryRoom) { this._lastGoal = 'carry'; return { type: 'carry', id: 'counter', x: MAP.serveSpot.x, y: MAP.serveSpot.y, label: 'Drop at the counter' }; }
+    const next = this.nextPad(); if (next) { const st = STATION_BY_ID[next]; return { type: 'save', id: next, x: st.x + st.w / 2, y: st.y + st.h / 2, label: 'Save for ' + st.name + ' (' + fmt(this.cash) + ' / ' + fmt(st.cost - (this.paid[next] || 0)) + ')' }; }
+    return { type: 'done', id: null, x: p.x, y: p.y, label: 'Servo complete. Keep the cash rolling.' };
+  }
+  autopilot(goal, dt) { // used by headless bots: steer input toward a goal using the pathfinder
+    const p = this.player; if (!goal) { this.input.x = this.input.y = 0; return true; }
+    if (!this._ap || this._ap.id !== goal.id || this._ap.type !== goal.type || (this._ap.t -= dt) <= 0) { this._ap = { id: goal.id, type: goal.type, t: 0.5, path: this.grid.path(p.x, p.y, goal.x, goal.y) || [] }; const l = this._ap.path[this._ap.path.length - 1]; if (l) { l.x = goal.x; l.y = goal.y; } }
+    const path = this._ap.path; while (path.length && dist(p.x, p.y, path[0].x, path[0].y) < 0.2) path.shift();
+    const tgt = path[0] || goal; const d = dist(p.x, p.y, tgt.x, tgt.y); if (d < 0.05) { this.input.x = this.input.y = 0; return true; }
+    this.input.x = (tgt.x - p.x) / d; this.input.y = (tgt.y - p.y) / d; return dist(p.x, p.y, goal.x, goal.y) < 0.35;
+  }
+  /* --- offline model --- */
+  offlineRate() {
+    let r = 0; const traffic = this.baseTraffic, carRate = traffic * Math.sqrt(this.stationMult);
+    // a pump handles one car at a time: it cannot cycle faster than drive-in + fill + drive-out
+    for (const id of ['pump1', 'pump2', 'pump3']) if (this.built[id]) { const cycle = (1.5 + STATION_BY_ID[id].carStop.y) / 5 + ECON.pump.fillTime / this.stationMult + 0.4; r += this.pumpPay() / Math.max(ECON.pump.interval / carRate, cycle); }
+    if (this.built.carwash) { const cycle = (1.5 + 16.5) / 5 + 1 + ECON.carwash.washTime / this.stationMult + 0.4; r += this.washPay() / Math.max(ECON.carwash.interval / carRate, cycle); }
+    if (this.built.counter && this.staff.val && this.staff.gav) { const items = this.unlockedItems();
+      if (items.length) { let prod = 0, sum = 0; for (const it of items) { prod += this.stationMult / ECON.makers[it].rate; sum += this.price(it); }
+        const demand = traffic / this.custInterval(items.length); const serveCap = 1 / (0.45 + ECON.customer.serveTime / (this.staffMult * (this.built.till2 ? 1.5 : 1))); r += Math.min(prod, demand, serveCap) * (sum / items.length); } }
+    return r * (ECON.offlineBase + ECON.offlinePerStaff * this.staffCount);
+  }
+  offlineEarnings(awaySec) { const t = clamp(awaySec || 0, 0, ECON.offlineCapSec); return { seconds: t, cash: Math.floor(this.offlineRate() * t), capped: awaySec > ECON.offlineCapSec, rate: this.offlineRate() }; }
+  /* --- save/load --- */
+  toJSON() { return { v: SAVE_VERSION, cash: this.cash, totalEarned: this.totalEarned, playTime: this.playTime, time: this.time, built: this.built, paid: this.paid, upgrades: this.upgrades,
+    tray: this.tray, shelf: this.shelf, piles: this.piles, player: { x: this.player.x, y: this.player.y }, carry: this.player.carry.slice(), stats: this.stats, flags: this.flags,
+    firstPlay: this.firstPlay, lastSeen: this.now(), chaosT: this.chaosT, staffCarry: Object.fromEntries(Object.entries(this.staff).map(([k, s]) => [k, s.carry.slice()])) }; }
+  load(d) {
+    this.reset(); d = Save.migrate(d);
+    this.cash = Math.max(0, Number(d.cash) || 0); this.totalEarned = Math.max(this.cash, Number(d.totalEarned) || 0); this.playTime = Number(d.playTime) || 0; this.time = Number(d.time) || 0;
+    this.built = {}; for (const id of ORDER) if (d.built && d.built[id]) this.built[id] = true;
+    this.paid = Object.assign({}, d.paid || {}); for (const id in this.built) this.paid[id] = STATION_BY_ID[id].cost;
+    for (const u of UPGRADES) this.upgrades[u.id] = clamp(Number((d.upgrades || {})[u.id]) || 0, 0, u.max);
+    for (const it of ITEMS) { this.tray[it] = clamp(Number((d.tray || {})[it]) || 0, 0, ECON.makers[it].cap); this.shelf[it] = clamp(Number((d.shelf || {})[it]) || 0, 0, ECON.shelfCap); }
+    this.piles = {}; for (const id in (d.piles || {})) if (STATION_BY_ID[id]) this.piles[id] = Math.max(0, Number(d.piles[id]) || 0);
+    if (d.player && isFinite(d.player.x) && isFinite(d.player.y)) { this.player.x = clamp(d.player.x, 2, MAP.W - 0.3); this.player.y = clamp(d.player.y, 0.3, MAP.H - 0.3); }
+    this.player.carry = (Array.isArray(d.carry) ? d.carry : []).filter(it => ITEMS.includes(it)).slice(0, 64);
+    this.stats = Object.assign(this.stats, d.stats || {}); this.flags = Object.assign({}, d.flags || {});
+    this.firstPlay = Number(d.firstPlay) || this.now(); this.lastSeen = Number(d.lastSeen) || this.now(); this.chaosT = Number(d.chaosT) || ECON.chaosFirst;
+    this.grid.rebuild(this.built);
+    for (const st of STATIONS) { if (!this.built[st.id]) continue; if (st.kind === 'hire') { this.hire(st.staff); this.staff[st.staff].bubble = null; const sc = (d.staffCarry || {})[st.staff]; if (Array.isArray(sc)) this.staff[st.staff].carry = sc.filter(it => ITEMS.includes(it)); } if (st.kind === 'pump' || st.kind === 'carwash') this.carT[st.id] = this.rng.range(1, 4); }
+    this.fx.length = 0; // loading should not replay sounds
+    this.unstick(this.player, 0.3); this.ensureReachable(this.player);
+  }
+}
+
+/* ---------------- 8. RENDERER (canvas 2D, 3/4 view, all art drawn in code) ---------------- */
+const INK = '#2b1a14';
+function rr(ctx, x, y, w, h, r) { r = Math.min(r, w / 2, h / 2); ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
+function box(ctx, x, y, w, h, r, fill, stroke = INK, lw = 3) { rr(ctx, x, y, w, h, r); ctx.fillStyle = fill; ctx.fill(); if (stroke) { ctx.lineWidth = lw; ctx.strokeStyle = stroke; ctx.stroke(); } }
+function circle(ctx, x, y, r, fill, stroke = INK, lw = 3) { ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fillStyle = fill; ctx.fill(); if (stroke) { ctx.lineWidth = lw; ctx.strokeStyle = stroke; ctx.stroke(); } }
+function ellipse(ctx, x, y, rx, ry, fill, stroke = INK, lw = 3) { ctx.beginPath(); ctx.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2); ctx.fillStyle = fill; ctx.fill(); if (stroke) { ctx.lineWidth = lw; ctx.strokeStyle = stroke; ctx.stroke(); } }
+function label(ctx, text, x, y, size, fill = '#fff', stroke = INK, align = 'center') { ctx.font = '900 ' + size + 'px "Arial Rounded MT Bold","Helvetica Neue",Arial,sans-serif'; ctx.textAlign = align; ctx.textBaseline = 'middle'; if (stroke) { ctx.lineWidth = Math.max(2, size * 0.22); ctx.strokeStyle = stroke; ctx.lineJoin = 'round'; ctx.strokeText(text, x, y); } ctx.fillStyle = fill; ctx.fillText(text, x, y); }
+function pill(ctx, text, x, y, size, bg = INK, fg = '#fff3dc', padX = 8) { ctx.font = '900 ' + size + 'px "Arial Rounded MT Bold","Helvetica Neue",Arial,sans-serif'; const w = ctx.measureText(text).width + padX * 2, h = size + 10; box(ctx, x - w / 2, y - h / 2, w, h, h / 2, bg, '#fff3dc', 2); ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = fg; ctx.fillText(text, x, y + 1); return w; }
+const LOOKS = {
+  player: { shirt: '#2e8bd8', skin: '#e0ac69', hat: 'akubra', hair: '#5a3a1a' },
+  gav:    { shirt: '#ff7a1a', skin: '#f1c27d', hat: 'hardhat', hair: '#3a2a1a', hivis: true },
+  val:    { shirt: '#9b5de5', skin: '#ffdbac', hat: 'bun', hair: '#d9d9d9', apron: true, glasses: true },
+  shazza: { shirt: '#f3e600', skin: '#c68642', hat: 'cap', hair: '#2a1a0a', hivis: true, ponytail: true },
+};
+class Renderer {
+  constructor(canvas, sim) {
+    this.cv = canvas; this.ctx = canvas.getContext('2d', { alpha: false }); this.sim = sim; this.cam = { x: MAP.playerStart.x, y: MAP.playerStart.y + 1 }; this.T = 52; this.dpr = 1; this.W = 1; this.H = 1;
+    this.ground = null; this.time = 0; this.popups = new Pool(() => ({})); this.fly = new Pool(() => ({})); this.confetti = new Pool(() => ({})); this.sparks = new Pool(() => ({}));
+    this.goal = null; this.goalT = 0; this.arrowOn = true; this.walletPos = { x: 70, y: 36 }; this.joy = null; this.onWallet = null; this.flash = 0; this.frames = 0; this.fpsT = 0; this.fps = 0; this.vignette = null;
+  }
+  resize(w, h, dpr) {
+    this.W = w; this.H = h; this.dpr = Math.min(dpr || 1, 2); this.cv.width = Math.floor(w * this.dpr); this.cv.height = Math.floor(h * this.dpr);
+    this.T = clamp(Math.min(w / 9.5, h / 16), 30, 110); this.buildGround();
+    const ctx = this.ctx; const g = ctx.createRadialGradient(w / 2, h / 2, Math.min(w, h) * 0.45, w / 2, h / 2, Math.max(w, h) * 0.8); g.addColorStop(0, 'rgba(60,15,50,0)'); g.addColorStop(1, 'rgba(60,15,50,0.5)'); this.vignette = g;
+    const s = ctx.createLinearGradient(0, 0, 0, h * 0.3); s.addColorStop(0, 'rgba(255,130,50,0.22)'); s.addColorStop(1, 'rgba(255,130,50,0)'); this.sunset = s;
+  }
+  w2s(x, y) { return [(x - this.cam.x) * this.T + this.W / 2, (y - this.cam.y) * this.T + this.H / 2]; }
+  buildGround() {
+    const T = this.T, dpr = this.dpr; const gw = MAP.W * T, gh = MAP.H * T; const cv = (typeof OffscreenCanvas !== 'undefined') ? new OffscreenCanvas(Math.ceil(gw * dpr), Math.ceil(gh * dpr)) : Object.assign(document.createElement('canvas'), { width: Math.ceil(gw * dpr), height: Math.ceil(gh * dpr) });
+    const g = cv.getContext('2d'); g.scale(dpr, dpr); const rng = new RNG(4242);
+    g.fillStyle = '#b9502f'; g.fillRect(0, 0, gw, gh);
+    for (let i = 0; i < 700; i++) { g.fillStyle = i % 3 ? '#a8452a' : '#cf6a45'; g.fillRect(rng.next() * gw, rng.next() * gh, T * 0.14, T * 0.07); }
+    for (let i = 0; i < 40; i++) { const x = rng.next() * gw, y = (rng.next() < 0.5 ? rng.range(0, 1.6) : rng.range(18.2, 22)) * T; if (x > 2 * T && x < 6 * T && y > 1.8 * T && y < 21.2 * T) continue; g.strokeStyle = '#8e9a3a'; g.lineWidth = 2; for (let k = 0; k < 5; k++) { g.beginPath(); g.moveTo(x, y); g.lineTo(x + (k - 2) * T * 0.07, y - T * (0.18 + rng.next() * 0.1)); g.stroke(); } }
+    // highway
+    g.fillStyle = '#3b3b45'; g.fillRect(0, 0, 2 * T, gh); g.fillStyle = '#d9d9d9'; g.fillRect(1.9 * T, 0, 0.06 * T, gh); g.fillRect(0.04 * T, 0, 0.05 * T, gh);
+    g.fillStyle = '#f3c623'; for (let y = 0; y < gh; y += T * 0.9) g.fillRect(0.97 * T, y, 0.06 * T, T * 0.45);
+    // forecourt
+    g.fillStyle = '#9d9c95'; g.fillRect(2 * T, 1.9 * T, 4 * T, 19.2 * T); g.strokeStyle = 'rgba(0,0,0,0.12)'; g.lineWidth = 2;
+    for (let x = 2; x <= 6; x++) { g.beginPath(); g.moveTo(x * T, 1.9 * T); g.lineTo(x * T, 21.1 * T); g.stroke(); } for (let y = 2; y <= 21; y++) { g.beginPath(); g.moveTo(2 * T, y * T); g.lineTo(6 * T, y * T); g.stroke(); }
+    for (let i = 0; i < 14; i++) { g.fillStyle = 'rgba(30,20,20,0.12)'; g.beginPath(); g.ellipse(T * rng.range(2.3, 5.7), T * rng.range(2.5, 20.5), T * rng.range(0.1, 0.35), T * rng.range(0.06, 0.18), 0, 0, Math.PI * 2); g.fill(); }
+    for (const py of [5.5, 9.5, 13.5]) { g.strokeStyle = '#f1e6cb'; g.lineWidth = 3; g.setLineDash([T * 0.15, T * 0.1]); g.strokeRect(2.15 * T, (py - 1) * T, 1.1 * T, 2 * T); g.setLineDash([]); }
+    g.fillStyle = '#c9c6ba'; g.fillRect(2 * T, 21.1 * T, 4 * T, 0.9 * T); // footpath
+    // shop floor
+    for (let y = 3; y < 17; y++) for (let x = 7; x < 11; x++) { g.fillStyle = (x + y) % 2 ? '#f1e6cb' : '#dfd0ab'; g.fillRect(x * T, y * T, T, T); }
+    g.fillStyle = '#c7b7d9'; g.fillRect(7 * T, 13 * T, 4 * T, 4 * T); for (let y = 13; y < 17; y++) for (let x = 7; x < 11; x++) { if ((x + y) % 2) { g.fillStyle = '#b8a7cc'; g.fillRect(x * T, y * T, T, T); } } // office lino
+    // walls
+    const s = MAP.shop; for (let y = s.y; y < s.y + s.h; y++) for (let x = s.x; x < s.x + s.w; x++) { const wall = x === s.x || x === s.x + s.w - 1 || y === s.y || y === s.y + s.h - 1; if (!wall) continue;
+      if (MAP.door.some(d => d.x === x && d.y === y)) { g.fillStyle = '#6b4a2b'; g.fillRect(x * T, y * T, T, T); g.fillStyle = '#d64b2a'; g.fillRect(x * T + T * 0.15, y * T + T * 0.1, T * 0.7, T * 0.8); continue; }
+      g.fillStyle = '#8e3a2d'; g.fillRect(x * T, y * T, T, T); g.fillStyle = '#a84a3a'; g.fillRect(x * T, y * T, T, T * 0.35); g.strokeStyle = INK; g.lineWidth = 2; g.strokeRect(x * T + 1, y * T + 1, T - 2, T - 2); }
+    g.fillStyle = '#d64b2a'; g.fillRect(6.6 * T, 1.55 * T, 4.8 * T, 0.9 * T); g.strokeStyle = INK; g.lineWidth = 3; g.strokeRect(6.6 * T, 1.55 * T, 4.8 * T, 0.9 * T);
+    g.font = '900 ' + (0.6 * T) + 'px "Arial Rounded MT Bold",Arial,sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.lineWidth = 4; g.strokeStyle = INK; g.strokeText('SERVO', 9 * T, 2.02 * T); g.fillStyle = '#fff3dc'; g.fillText('SERVO', 9 * T, 2.02 * T);
+    g.fillStyle = 'rgba(0,0,0,0.25)'; g.fillRect(6.5 * T, 9 * T, 0.4 * T, 2 * T); // door mat shadow
+    // back yard: water tank + dead gum
+    g.fillStyle = '#7f8c8d'; g.fillRect(7.5 * T, 18.6 * T, 1.4 * T, 1.3 * T); g.fillStyle = '#95a5a6'; g.beginPath(); g.ellipse(8.2 * T, 18.6 * T, 0.7 * T, 0.25 * T, 0, 0, Math.PI * 2); g.fill(); g.strokeStyle = INK; g.lineWidth = 3; g.strokeRect(7.5 * T, 18.6 * T, 1.4 * T, 1.3 * T);
+    g.strokeStyle = '#d8c7a8'; g.lineWidth = 6; g.beginPath(); g.moveTo(10.5 * T, 21 * T); g.lineTo(10.5 * T, 18.6 * T); g.lineTo(10 * T, 17.9 * T); g.moveTo(10.5 * T, 19.4 * T); g.lineTo(11.1 * T, 18.5 * T); g.stroke();
+    g.fillStyle = '#c9c6ba'; g.fillRect(6 * T, 21.1 * T, 6 * T, 0.9 * T);
+    this.ground = cv;
+  }
+  spawnPopup(x, y, text, color = '#ffe27a', size = 15) { const p = this.popups.get(); p.x = x; p.y = y; p.text = text; p.t = 0; p.dur = 1.0; p.color = color; p.size = size; }
+  spawnCash(x, y, amount) { const [sx, sy] = this.w2s(x, y); const n = clamp(Math.ceil(amount / 12), 2, 9);
+    for (let i = 0; i < n; i++) { const f = this.fly.get(); f.sx = sx + (Math.random() - 0.5) * 20; f.sy = sy + (Math.random() - 0.5) * 20; f.tx = this.walletPos.x; f.ty = this.walletPos.y; f.t = -i * 0.05; f.dur = 0.55; f.rot = Math.random() * 6; } }
+  spawnConfetti(n, sx, sy) { for (let i = 0; i < n; i++) { const c = this.confetti.get(); c.x = sx ?? this.W / 2; c.y = sy ?? this.H * 0.3; const a = Math.random() * Math.PI * 2, v = 200 + Math.random() * 300; c.vx = Math.cos(a) * v; c.vy = Math.sin(a) * v - 200; c.color = ['#ffe27a', '#4fb86a', '#ff9f3f', '#3d9be9', '#f15bb5', '#fff3dc'][i % 6]; c.rot = Math.random() * 6; c.t = 0; c.dur = 1.6 + Math.random(); } }
+  spawnSparks(x, y, n = 4, color = '#ffe27a') { for (let i = 0; i < n; i++) { const s = this.sparks.get(); s.x = x; s.y = y; const a = Math.random() * Math.PI * 2, v = 1 + Math.random() * 2; s.vx = Math.cos(a) * v; s.vy = Math.sin(a) * v - 1.5; s.t = 0; s.dur = 0.5; s.color = color; } }
+  render(dt) {
+    const ctx = this.ctx, sim = this.sim, T = this.T, W = this.W, H = this.H; this.time += dt; this.frames++; this.fpsT += dt; if (this.fpsT >= 1) { this.fps = this.frames; this.frames = 0; this.fpsT = 0; }
+    this.goalT -= dt; if (this.goalT <= 0) { this.goalT = 0.15; this.goal = sim.nextGoal(); }
+    // camera
+    const p = sim.player; const vw = W / T, vh = H / T; let tx = p.x, ty = p.y + 0.6;
+    if (vw >= MAP.W) tx = MAP.W / 2; else tx = clamp(tx, vw / 2, MAP.W - vw / 2); if (vh >= MAP.H) ty = MAP.H / 2; else ty = clamp(ty, vh / 2, MAP.H - vh / 2);
+    const k = 1 - Math.pow(0.001, dt); this.cam.x += (tx - this.cam.x) * k; this.cam.y += (ty - this.cam.y) * k;
+    ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0); ctx.fillStyle = '#b9502f'; ctx.fillRect(0, 0, W, H);
+    const [gx, gy] = this.w2s(0, 0); ctx.drawImage(this.ground, gx, gy, MAP.W * T, MAP.H * T);
+    // flat decals: pads, serve spot
+    for (const id of sim.visiblePads()) this.drawPad(STATION_BY_ID[id]);
+    if (sim.built.counter && !sim.staff.val) { const [sx, sy] = this.w2s(MAP.serveSpot.x, MAP.serveSpot.y); ctx.globalAlpha = 0.55 + 0.25 * Math.sin(this.time * 4); ellipse(ctx, sx, sy, T * 0.38, T * 0.2, '#ffe27a', INK, 2); ctx.globalAlpha = 1; label(ctx, 'SERVE', sx, sy, T * 0.2, INK, null); }
+    // y-sorted drawables
+    const items = [];
+    for (const st of STATIONS) if (sim.built[st.id]) items.push({ y: st.y + st.h - 0.01, f: () => this.drawStation(st) });
+    for (const id in sim.piles) if (sim.piles[id] > 0) { const pp = STATION_BY_ID[id].pile; items.push({ y: pp.y, f: () => this.drawPile(pp.x, pp.y, sim.piles[id]) }); }
+    for (const c of sim.cars) items.push({ y: c.y + 0.75, f: () => this.drawCar(c) });
+    for (const c of sim.customers) items.push({ y: c.y, f: () => this.drawCustomer(c) });
+    for (const who in sim.staff) items.push({ y: sim.staff[who].y, f: () => this.drawStaff(sim.staff[who]) });
+    items.push({ y: p.y, f: () => this.drawPlayer() });
+    items.sort((a, b) => a.y - b.y); for (const it of items) it.f();
+    for (const g of sim.seagulls) this.drawSeagull(g);
+    // bubbles on top of everything
+    for (const c of sim.customers) if (c.bubble) this.drawBubble(c.x, c.y - 1.45, c.bubble); for (const who in sim.staff) if (sim.staff[who].bubble) this.drawBubble(sim.staff[who].x, sim.staff[who].y - 1.45, sim.staff[who].bubble);
+    for (const c of sim.cars) if (c.bubble && c.state === 'fill') this.drawBubble(c.x, c.y - 1.0, c.bubble);
+    this.drawParticles(dt); this.drawArrow();
+    ctx.fillStyle = this.sunset; ctx.fillRect(0, 0, W, H * 0.3); ctx.fillStyle = this.vignette; ctx.fillRect(0, 0, W, H);
+    if (sim.event === 'rush') { ctx.strokeStyle = 'rgba(255,120,30,' + (0.35 + 0.25 * Math.sin(this.time * 6)) + ')'; ctx.lineWidth = 10; ctx.strokeRect(5, 5, W - 10, H - 10); }
+    if (this.flash > 0) { ctx.fillStyle = 'rgba(255,240,200,' + this.flash * 0.5 + ')'; ctx.fillRect(0, 0, W, H); this.flash -= dt * 3; }
+    this.drawJoystick();
+  }
+  drawPad(st) {
+    const ctx = this.ctx, T = this.T, sim = this.sim; const [sx, sy] = this.w2s(st.x, st.y); const w = st.w * T, h = st.h * T; const paid = sim.paid[st.id] || 0, remaining = st.cost - paid; const afford = sim.cash >= remaining; const prog = paid / st.cost;
+    const pulse = afford ? 1 + 0.03 * Math.sin(this.time * 6) : 1; ctx.save(); ctx.translate(sx + w / 2, sy + h / 2); ctx.scale(pulse, pulse); ctx.translate(-(sx + w / 2), -(sy + h / 2));
+    box(ctx, sx - 4, sy - 4, w + 8, h + 8, 10, afford ? 'rgba(255,226,122,0.35)' : 'rgba(255,243,220,0.25)', null);
+    if (prog > 0) { ctx.save(); rr(ctx, sx - 4, sy - 4, w + 8, h + 8, 10); ctx.clip(); ctx.fillStyle = 'rgba(79,184,106,0.75)'; ctx.fillRect(sx - 4, sy - 4 + (h + 8) * (1 - prog), w + 8, (h + 8) * prog); ctx.restore(); }
+    ctx.setLineDash([8, 6]); ctx.lineDashOffset = -this.time * 30; rr(ctx, sx - 4, sy - 4, w + 8, h + 8, 10); ctx.lineWidth = 3; ctx.strokeStyle = afford ? '#ffe27a' : '#fff3dc'; ctx.stroke(); ctx.setLineDash([]);
+    ctx.font = (T * 0.5) + 'px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(st.icon, sx + w / 2, sy + h / 2 + 1);
+    ctx.restore();
+    const txt = remaining < st.cost ? fmt(remaining) + ' to go' : fmt(st.cost); pill(ctx, st.name, sx + w / 2, sy + h + T * 0.22, Math.max(10, T * 0.2), INK, '#fff3dc');
+    pill(ctx, txt, sx + w / 2, sy + h + T * 0.22 + Math.max(10, T * 0.2) + 12, Math.max(10, T * 0.21), afford ? '#4fb86a' : '#8d3b2e', '#fff');
+  }
+  drawStation(st) {
+    const ctx = this.ctx, T = this.T, sim = this.sim; const [sx, sy] = this.w2s(st.x, st.y); const w = st.w * T, h = st.h * T; const b = sim.bounce[st.id] || 0; const sc = 1 + 0.12 * Math.sin(b * Math.PI) * b;
+    ctx.save(); ctx.translate(sx + w / 2, sy + h); ctx.scale(sc, 2 - sc); ctx.translate(-(sx + w / 2), -(sy + h));
+    switch (st.kind) {
+      case 'pump': { box(ctx, sx + 0.22 * T, sy + 0.3 * T, 0.56 * T, 0.68 * T, 6, '#7d7f86'); box(ctx, sx + 0.22 * T, sy + 0.1 * T, 0.56 * T, 0.3 * T, 6, '#d64b2a'); box(ctx, sx + 0.3 * T, sy + 0.45 * T, 0.4 * T, 0.2 * T, 3, '#9fe3ff', INK, 2);
+        ctx.strokeStyle = INK; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(sx + 0.26 * T, sy + 0.5 * T); ctx.quadraticCurveTo(sx - 0.05 * T, sy + 0.55 * T, sx + 0.02 * T, sy + 0.95 * T); ctx.stroke(); label(ctx, st.id.slice(-1), sx + 0.5 * T, sy + 0.82 * T, T * 0.22, '#fff'); break; }
+      case 'maker': { const item = st.item; const n = sim.tray[item], cap = ECON.makers[item].cap; const col = item === 'pie' ? '#444' : item === 'coffee' ? '#1f3b57' : '#5b6670';
+        box(ctx, sx + 0.1 * T, sy + 0.26 * T, 0.8 * T, 0.72 * T, 6, col); box(ctx, sx + 0.1 * T, sy + 0.1 * T, 0.8 * T, 0.22 * T, 6, item === 'coffee' ? '#c0c8d0' : '#333');
+        box(ctx, sx + 0.18 * T, sy + 0.36 * T, 0.64 * T, 0.5 * T, 4, item === 'pie' ? 'rgba(255,170,60,0.85)' : item === 'coffee' ? 'rgba(140,200,240,0.6)' : 'rgba(255,200,120,0.6)', INK, 2);
+        const rows = Math.min(n, 6); for (let i = 0; i < rows; i++) this.drawItem(sx + 0.5 * T + ((i % 2) ? 0.12 : -0.12) * T, sy + 0.78 * T - i * 0.07 * T, item, 0.42);
+        const prog = clamp(sim.cookT[item] / ECON.makers[item].rate, 0, 1); box(ctx, sx + 0.14 * T, sy + 0.9 * T, 0.72 * T, 0.07 * T, 2, '#1a0d0a', null); ctx.fillStyle = n >= cap ? '#4fb86a' : '#ffe27a'; ctx.fillRect(sx + 0.14 * T, sy + 0.9 * T, 0.72 * T * (n >= cap ? 1 : prog), 0.07 * T);
+        pill(ctx, n + '/' + cap, sx + 0.5 * T, sy + 0.02 * T, Math.max(10, T * 0.2), n >= cap ? '#d64b2a' : INK, '#fff', 6); break; }
+      case 'counter': { box(ctx, sx + 0.04 * T, sy + 0.42 * T, w - 0.08 * T, 0.58 * T, 6, '#7a4a28'); box(ctx, sx + 0.04 * T, sy + 0.12 * T, w - 0.08 * T, 0.5 * T, 6, '#a86a3c');
+        const items = sim.unlockedItems(); items.forEach((it, idx) => { const cx = sx + (0.55 + idx * 0.85) * T + (3 - items.length) * 0.4 * T; const n = sim.shelf[it]; const rows = Math.min(n, 5); for (let i = 0; i < rows; i++) this.drawItem(cx, sy + 0.4 * T - i * 0.07 * T, it, 0.5); pill(ctx, String(n), cx, sy + 0.62 * T, Math.max(9, T * 0.17), n === 0 ? '#d64b2a' : INK, '#fff', 5); });
+        box(ctx, sx + w - 0.5 * T, sy + 0.02 * T, 0.42 * T, 0.5 * T, 4, '#d9d9d9'); box(ctx, sx + w - 0.46 * T, sy + 0.08 * T, 0.34 * T, 0.2 * T, 2, '#9fe3ff', INK, 2); break; }
+      case 'till2': { box(ctx, sx + 0.12 * T, sy + 0.4 * T, 0.76 * T, 0.6 * T, 6, '#a86a3c'); box(ctx, sx + 0.22 * T, sy + 0.05 * T, 0.56 * T, 0.5 * T, 4, '#d9d9d9'); box(ctx, sx + 0.3 * T, sy + 0.12 * T, 0.4 * T, 0.2 * T, 2, '#9fe3ff', INK, 2); break; }
+      case 'office': { box(ctx, sx + 0.1 * T, sy + 0.4 * T, w - 0.2 * T, 0.58 * T, 6, '#6b4a2b'); box(ctx, sx + 0.1 * T, sy - 0.1 * T, w - 0.2 * T, 0.55 * T, 6, '#2b7a4b'); label(ctx, 'UPGRADES', sx + w / 2, sy + 0.18 * T, T * 0.24, '#fff3dc'); box(ctx, sx + w - 0.65 * T, sy + 0.42 * T, 0.5 * T, 0.38 * T, 3, '#cfd8dc'); box(ctx, sx + w - 0.6 * T, sy + 0.47 * T, 0.4 * T, 0.22 * T, 2, '#3d9be9', INK, 2); break; }
+      case 'hire': { box(ctx, sx + 0.25 * T, sy + 0.2 * T, 0.5 * T, 0.78 * T, 4, st.staff === 'gav' ? '#ff7a1a' : st.staff === 'val' ? '#9b5de5' : '#f3e600'); label(ctx, STAFF_INFO[st.staff].name.split(' ').pop().toUpperCase(), sx + 0.5 * T, sy + 0.6 * T, T * 0.16, '#fff'); break; }
+      case 'billboard': { ctx.fillStyle = INK; ctx.fillRect(sx + 0.3 * T, sy + 0.2 * T, 0.12 * T, 0.8 * T); ctx.fillRect(sx + w - 0.42 * T, sy + 0.2 * T, 0.12 * T, 0.8 * T);
+        const grd = ctx.createLinearGradient(0, sy - 0.9 * T, 0, sy + 0.3 * T); grd.addColorStop(0, '#ff7a3d'); grd.addColorStop(1, '#b8336a'); box(ctx, sx + 0.05 * T, sy - 0.95 * T, w - 0.1 * T, 1.2 * T, 6, grd);
+        label(ctx, 'SERVO EMPIRE', sx + w / 2, sy - 0.62 * T, T * 0.26, '#fff3dc'); label(ctx, 'next left · pies · fuel', sx + w / 2, sy - 0.3 * T, T * 0.16, '#fff3dc', null); label(ctx, "Petrol Pete's? Nah.", sx + w / 2, sy - 0.05 * T, T * 0.15, '#ffe27a', null);
+        for (let i = 0; i < 5; i++) circle(ctx, sx + 0.25 * T + i * (w - 0.5 * T) / 4, sy + 0.2 * T, 3, (Math.floor(this.time * 4) + i) % 2 ? '#ffe27a' : '#d64b2a', null); break; }
+      case 'carwash': { const busy = sim.cars.some(c => c.station === 'carwash' && c.state === 'fill');
+        box(ctx, sx + 0.05 * T, sy + 0.1 * T, 0.35 * T, h - 0.2 * T, 6, '#2b7fd1'); box(ctx, sx + w - 0.4 * T, sy + 0.1 * T, 0.35 * T, h - 0.2 * T, 6, '#2b7fd1'); box(ctx, sx, sy - 0.2 * T, w, 0.4 * T, 6, '#3d9be9'); label(ctx, 'CAR WASH', sx + w / 2, sy, T * 0.2, '#fff');
+        const rot = busy ? this.time * 10 : 0; for (const bx of [sx + 0.22 * T, sx + w - 0.22 * T]) { circle(ctx, bx, sy + 1.0 * T, 0.3 * T, '#5dade2'); for (let i = 0; i < 6; i++) { const a = rot + i; ctx.strokeStyle = '#1b4f72'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(bx, sy + T); ctx.lineTo(bx + Math.cos(a) * 0.28 * T, sy + T + Math.sin(a) * 0.28 * T); ctx.stroke(); } }
+        if (busy) for (let i = 0; i < 6; i++) { const t = (this.time * 1.5 + i * 0.37) % 1; circle(ctx, sx + 0.3 * T + ((i * 37) % 100) / 100 * (w - 0.6 * T), sy + h - t * h, 4 + 3 * Math.sin(i), 'rgba(255,255,255,' + (0.8 - t * 0.7) + ')', null); } break; }
+      case 'bigpie': { box(ctx, sx + 0.1 * T, sy + 0.45 * T, w - 0.2 * T, 0.55 * T, 6, '#8f8f8a'); ellipse(ctx, sx + w / 2, sy + 0.3 * T, 0.95 * T, 0.5 * T, '#d9a35b', INK, 4); ellipse(ctx, sx + w / 2, sy + 0.2 * T, 0.7 * T, 0.32 * T, '#e8bf7c', '#8a4a1c', 3);
+        ctx.strokeStyle = '#8a4a1c'; ctx.lineWidth = 3; for (let i = -1; i <= 1; i++) { ctx.beginPath(); ctx.moveTo(sx + w / 2 + i * 0.25 * T, sy + 0.1 * T); ctx.lineTo(sx + w / 2 + i * 0.25 * T, sy + 0.3 * T); ctx.stroke(); }
+        for (let i = 0; i < 3; i++) { const t = (this.time * 0.6 + i * 0.33) % 1; ctx.strokeStyle = 'rgba(255,255,255,' + (0.6 - t * 0.6) + ')'; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(sx + w / 2 + (i - 1) * 0.3 * T, sy - 0.1 * T - t * 0.7 * T); ctx.quadraticCurveTo(sx + w / 2 + (i - 1) * 0.3 * T + 8, sy - 0.25 * T - t * 0.7 * T, sx + w / 2 + (i - 1) * 0.3 * T, sy - 0.4 * T - t * 0.7 * T); ctx.stroke(); }
+        label(ctx, 'THE BIG PIE', sx + w / 2, sy + 0.78 * T, T * 0.2, '#fff3dc'); break; }
+    }
+    ctx.restore();
+  }
+  drawItem(x, y, type, s = 1) { const ctx = this.ctx, T = this.T * s;
+    if (type === 'pie') { ellipse(ctx, x, y, 0.3 * T, 0.17 * T, '#d9a35b', '#6b3a14', 2); ellipse(ctx, x, y - 0.03 * T, 0.2 * T, 0.1 * T, '#e8bf7c', null); }
+    else if (type === 'coffee') { box(ctx, x - 0.14 * T, y - 0.2 * T, 0.28 * T, 0.4 * T, 3, '#6b3e1e', INK, 2); box(ctx, x - 0.17 * T, y - 0.26 * T, 0.34 * T, 0.1 * T, 2, '#fff', INK, 2); ctx.strokeStyle = '#d64b2a'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(x + 0.05 * T, y - 0.26 * T); ctx.lineTo(x + 0.1 * T, y - 0.42 * T); ctx.stroke(); }
+    else { box(ctx, x - 0.27 * T, y - 0.11 * T, 0.54 * T, 0.22 * T, 7, '#c98a4a', '#6b3a14', 2); ctx.strokeStyle = '#f1d9a8'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(x - 0.15 * T, y - 0.04 * T); ctx.lineTo(x + 0.15 * T, y - 0.04 * T); ctx.stroke(); }
+  }
+  drawPerson(wx, wy, look, anim, moving, carry, face, extra = {}) {
+    const ctx = this.ctx, T = this.T; const [sx, sy] = this.w2s(wx, wy); const bob = moving ? Math.sin(anim) : 0;
+    ellipse(ctx, sx, sy, 0.3 * T, 0.11 * T, 'rgba(0,0,0,0.25)', null);
+    ctx.fillStyle = '#2f3a4a'; ctx.fillRect(sx - 0.17 * T, sy - 0.32 * T + (moving ? Math.max(0, bob) * 0.06 * T : 0), 0.13 * T, 0.32 * T); ctx.fillRect(sx + 0.04 * T, sy - 0.32 * T + (moving ? Math.max(0, -bob) * 0.06 * T : 0), 0.13 * T, 0.32 * T);
+    box(ctx, sx - 0.27 * T, sy - 0.82 * T, 0.54 * T, 0.56 * T, 0.14 * T, look.shirt);
+    if (look.hivis) { ctx.fillStyle = '#d9d9d9'; ctx.fillRect(sx - 0.24 * T, sy - 0.62 * T, 0.48 * T, 0.06 * T); ctx.fillRect(sx - 0.24 * T, sy - 0.46 * T, 0.48 * T, 0.06 * T); }
+    if (look.apron) { box(ctx, sx - 0.18 * T, sy - 0.7 * T, 0.36 * T, 0.42 * T, 4, '#fff3dc', INK, 2); }
+    if (look.vest) { box(ctx, sx - 0.27 * T, sy - 0.82 * T, 0.54 * T, 0.56 * T, 0.14 * T, 'rgba(255,170,0,0.0)', null); ctx.fillStyle = '#ff9f1a'; ctx.fillRect(sx - 0.27 * T, sy - 0.8 * T, 0.14 * T, 0.5 * T); ctx.fillRect(sx + 0.13 * T, sy - 0.8 * T, 0.14 * T, 0.5 * T); }
+    const hy = sy - 1.0 * T; circle(ctx, sx, hy, 0.25 * T, look.skin);
+    ctx.fillStyle = INK; circle(ctx, sx + face * 0.08 * T, hy - 0.02 * T, 0.03 * T, INK, null); circle(ctx, sx + face * 0.17 * T, hy - 0.02 * T, 0.03 * T, INK, null);
+    if (extra.happy) { ctx.strokeStyle = INK; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(sx + face * 0.1 * T, hy + 0.06 * T, 0.07 * T, 0.1, Math.PI - 0.1); ctx.stroke(); }
+    if (look.glasses) { ctx.strokeStyle = INK; ctx.lineWidth = 2; ctx.strokeRect(sx + face * 0.03 * T, hy - 0.07 * T, 0.1 * T, 0.09 * T); ctx.strokeRect(sx + face * 0.13 * T, hy - 0.07 * T, 0.1 * T, 0.09 * T); }
+    switch (look.hat) {
+      case 'akubra': ellipse(ctx, sx, hy - 0.16 * T, 0.4 * T, 0.11 * T, '#8a5a2b'); box(ctx, sx - 0.2 * T, hy - 0.4 * T, 0.4 * T, 0.26 * T, 6, '#8a5a2b'); break;
+      case 'hardhat': ctx.beginPath(); ctx.arc(sx, hy - 0.14 * T, 0.27 * T, Math.PI, 0); ctx.closePath(); ctx.fillStyle = '#f3c623'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = INK; ctx.stroke(); box(ctx, sx - 0.33 * T, hy - 0.17 * T, 0.66 * T, 0.07 * T, 2, '#f3c623', INK, 2); break;
+      case 'cap': ctx.beginPath(); ctx.arc(sx, hy - 0.12 * T, 0.26 * T, Math.PI, 0); ctx.closePath(); ctx.fillStyle = look.capColor || '#222'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = INK; ctx.stroke(); box(ctx, sx + (face > 0 ? 0 : -0.42 * T), hy - 0.15 * T, 0.42 * T, 0.07 * T, 2, look.capColor || '#222', INK, 2); break;
+      case 'beanie': ctx.beginPath(); ctx.arc(sx, hy - 0.1 * T, 0.27 * T, Math.PI, 0); ctx.closePath(); ctx.fillStyle = '#d64b2a'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = INK; ctx.stroke(); circle(ctx, sx, hy - 0.38 * T, 0.07 * T, '#fff3dc', INK, 2); break;
+      case 'bun': ctx.beginPath(); ctx.arc(sx, hy - 0.1 * T, 0.27 * T, Math.PI, 0); ctx.closePath(); ctx.fillStyle = look.hair; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = INK; ctx.stroke(); circle(ctx, sx, hy - 0.36 * T, 0.11 * T, look.hair); break;
+      default: ctx.beginPath(); ctx.arc(sx, hy - 0.08 * T, 0.26 * T, Math.PI, 0); ctx.closePath(); ctx.fillStyle = look.hair; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = INK; ctx.stroke();
+    }
+    if (look.ponytail) { ellipse(ctx, sx - face * 0.3 * T, hy + 0.05 * T, 0.08 * T, 0.18 * T, look.hair); }
+    if (carry && carry.length) { for (let i = 0; i < carry.length; i++) this.drawItem(sx, sy - 1.42 * T - i * 0.12 * T, carry[i], 0.65); }
+    return [sx, sy];
+  }
+  drawPlayer() { const p = this.sim.player; const [sx, sy] = this.drawPerson(p.x, p.y, LOOKS.player, p.anim, p.moving, p.carry, p.face);
+    if (p.carry.length >= this.sim.carryCap) pill(this.ctx, 'FULL', sx, sy - 1.5 * this.T - p.carry.length * 0.12 * this.T, Math.max(9, this.T * 0.17), '#d64b2a', '#fff', 5); }
+  drawStaff(s) { const look = LOOKS[s.id]; const moving = s.path && s.path.length > 0; const [sx, sy] = this.drawPerson(s.x, s.y, look, s.anim, moving, s.carry, s.face);
+    if (!moving) { pill(this.ctx, STAFF_INFO[s.id].name.split(' ')[0], sx, sy + 0.25 * this.T, Math.max(9, this.T * 0.16), 'rgba(43,26,20,0.75)', '#fff3dc', 5); } }
+  drawCustomer(c) { const look = this._custLook(c); const moving = c.state !== 'queue'; const [sx, sy] = this.drawPerson(c.x, c.y, look, c.anim, moving, null, c.face, { happy: c.happy });
+    if (c.state !== 'leave') { const T = this.T; const frac = c.patience / ECON.customer.patience; const urgent = frac < 0.35; const shake = urgent ? Math.sin(this.time * 30) * 2 : 0; const bx = sx + 0.42 * T + shake, by = sy - 1.42 * T;
+      circle(this.ctx, bx, by, 0.27 * T, '#fff', urgent ? '#d64b2a' : INK, 3); this.drawItem(bx, by + 0.02 * T, c.want, 0.6);
+      if (this.sim.shelf[c.want] === 0 && c.state === 'queue') label(this.ctx, '!', bx + 0.22 * T, by - 0.22 * T, T * 0.26, '#d64b2a');
+      if (frac < 0.5) { this.ctx.fillStyle = '#1a0d0a'; this.ctx.fillRect(bx - 0.25 * T, by + 0.3 * T, 0.5 * T, 4); this.ctx.fillStyle = urgent ? '#d64b2a' : '#ffe27a'; this.ctx.fillRect(bx - 0.25 * T, by + 0.3 * T, 0.5 * T * frac, 4); } } }
+  _custLook(c) { if (!c._look) c._look = { shirt: c.color, skin: c.skin, hat: c.hat === 'hivis' ? 'none' : c.hat, hair: ['#2a1a0a', '#5a3a1a', '#d9a35b', '#111', '#8b1a1a'][Math.floor(c.color.charCodeAt(1) % 5)], vest: c.hat === 'hivis', capColor: c.hat === 'cap' ? ['#d64b2a', '#3d9be9', '#222'][c.color.charCodeAt(2) % 3] : null }; return c._look; }
+  drawCar(c) { const ctx = this.ctx, T = this.T; const [cx, cy] = this.w2s(c.x, c.y); const long = c.kind === 'truck' ? 2.1 : 1.5, wide = c.kind === 'truck' ? 0.9 : 0.8; const L = long * T, Wd = wide * T; const south = !c.pass;
+    ellipse(ctx, cx, cy + 0.05 * T, Wd * 0.55, L * 0.5, 'rgba(0,0,0,0.22)', null);
+    ctx.fillStyle = '#111'; for (const [ox, oy] of [[-0.5, -0.3], [0.5, -0.3], [-0.5, 0.3], [0.5, 0.3]]) ctx.fillRect(cx + ox * Wd - 0.08 * T, cy + oy * L - 0.14 * T, 0.16 * T, 0.28 * T);
+    box(ctx, cx - Wd / 2, cy - L / 2, Wd, L, 0.16 * T, c.color);
+    const frontY = south ? cy + L / 2 : cy - L / 2, dir = south ? 1 : -1;
+    box(ctx, cx - Wd * 0.38, cy + dir * 0.05 * T - (dir > 0 ? 0 : 0.3 * T), Wd * 0.76, 0.3 * T, 4, '#9fd8ff', INK, 2); // windscreen
+    if (c.kind === 'ute') box(ctx, cx - Wd * 0.4, cy - dir * 0.6 * T - (dir > 0 ? 0 : -0.1 * T) + (dir > 0 ? -0.05 * T : 0), Wd * 0.8, 0.5 * T, 4, 'rgba(0,0,0,0.25)', INK, 2);
+    else if (c.kind === 'van' || c.kind === 'truck') box(ctx, cx - Wd * 0.42, cy - dir * (L * 0.45) + (dir > 0 ? 0 : 0.3 * T) - (dir > 0 ? 0.0 : 0), Wd * 0.84, L * 0.45, 4, c.kind === 'truck' ? '#d9d9d9' : c.color, INK, 2);
+    else box(ctx, cx - Wd * 0.34, cy - dir * 0.45 * T - (dir > 0 ? 0.0 : -0.2 * T), Wd * 0.68, 0.22 * T, 3, '#9fd8ff', INK, 2);
+    ctx.fillStyle = '#ffe27a'; ctx.fillRect(cx - Wd / 2 + 3, frontY - (south ? 7 : 0), 7, 7); ctx.fillRect(cx + Wd / 2 - 10, frontY - (south ? 7 : 0), 7, 7);
+    if (c.state === 'fill') { const st = STATION_BY_ID[c.station]; const total = (c.station === 'carwash' ? ECON.carwash.washTime : ECON.pump.fillTime) / this.sim.stationMult; const prog = 1 - c.t / total; box(ctx, cx - 0.4 * T, cy - L / 2 - 0.3 * T, 0.8 * T, 0.14 * T, 3, '#1a0d0a', INK, 2); ctx.fillStyle = '#4fb86a'; ctx.fillRect(cx - 0.4 * T, cy - L / 2 - 0.3 * T, 0.8 * T * prog, 0.14 * T); }
+  }
+  drawSeagull(g) { const ctx = this.ctx, T = this.T; const [sx, sy] = this.w2s(g.x, g.y); const flap = Math.sin(g.anim) * 0.2 * T; ellipse(ctx, sx, sy + 0.5 * T, 0.2 * T, 0.07 * T, 'rgba(0,0,0,0.15)', null);
+    ctx.fillStyle = '#fff'; ctx.strokeStyle = INK; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(sx - 0.1 * T, sy); ctx.lineTo(sx - 0.55 * T, sy - 0.15 * T - flap); ctx.lineTo(sx - 0.2 * T, sy + 0.08 * T); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(sx + 0.1 * T, sy); ctx.lineTo(sx + 0.55 * T, sy - 0.15 * T - flap); ctx.lineTo(sx + 0.2 * T, sy + 0.08 * T); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ellipse(ctx, sx, sy, 0.26 * T, 0.16 * T, '#fff'); circle(ctx, sx + 0.18 * T, sy - 0.1 * T, 0.11 * T, '#fff'); ctx.fillStyle = '#ff9f1a'; ctx.beginPath(); ctx.moveTo(sx + 0.26 * T, sy - 0.1 * T); ctx.lineTo(sx + 0.42 * T, sy - 0.06 * T); ctx.lineTo(sx + 0.26 * T, sy - 0.02 * T); ctx.closePath(); ctx.fill(); ctx.stroke(); circle(ctx, sx + 0.2 * T, sy - 0.13 * T, 0.03 * T, INK, null);
+    if (g.carrying) this.drawItem(sx, sy + 0.25 * T, 'pie', 0.6); if (g.state === 'hover') this.drawBubble(g.x, g.y - 0.7, SEAGULL_LINE); }
+  drawPile(wx, wy, amount) { const ctx = this.ctx, T = this.T; const [sx, sy] = this.w2s(wx, wy); const n = clamp(Math.ceil(amount / 15), 1, 10);
+    for (let i = 0; i < n; i++) { box(ctx, sx - 0.3 * T + ((i % 2) * 0.04 - 0.02) * T, sy - 0.12 * T - i * 0.07 * T, 0.6 * T, 0.16 * T, 3, '#4fb86a', INK, 2); } ctx.fillStyle = '#2d7a3e'; ctx.fillRect(sx - 0.1 * T, sy - 0.1 * T - (n - 1) * 0.07 * T, 0.2 * T, 0.1 * T);
+    pill(ctx, fmt(amount), sx, sy - 0.3 * T - n * 0.07 * T, Math.max(10, T * 0.2), '#2d7a3e', '#fff', 6); }
+  drawBubble(wx, wy, text) { const ctx = this.ctx, T = this.T; let [sx, sy] = this.w2s(wx, wy); const size = Math.max(11, T * 0.2); ctx.font = '900 ' + size + 'px "Arial Rounded MT Bold","Helvetica Neue",Arial,sans-serif';
+    const words = text.split(' '), lines = []; let cur = ''; const maxW = Math.min(170, this.W * 0.45); for (const w of words) { const t = cur ? cur + ' ' + w : w; if (ctx.measureText(t).width > maxW && cur) { lines.push(cur); cur = w; } else cur = t; } if (cur) lines.push(cur);
+    const lw = Math.max(...lines.map(l => ctx.measureText(l).width)) + 16, lh = size * 1.2, bh = lines.length * lh + 10; sx = clamp(sx, lw / 2 + 4, this.W - lw / 2 - 4); const by = sy - bh;
+    box(ctx, sx - lw / 2, by, lw, bh, 10, '#fff', INK, 2.5); ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.moveTo(sx - 6, by + bh - 1); ctx.lineTo(sx + 6, by + bh - 1); ctx.lineTo(sx, by + bh + 8); ctx.closePath(); ctx.fill(); ctx.strokeStyle = INK; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(sx - 6, by + bh); ctx.lineTo(sx, by + bh + 8); ctx.lineTo(sx + 6, by + bh); ctx.stroke();
+    ctx.fillStyle = INK; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; lines.forEach((l, i) => ctx.fillText(l, sx, by + 5 + lh * (i + 0.5))); }
+  drawParticles(dt) { const ctx = this.ctx, T = this.T;
+    for (const s of this.sparks.active.slice()) { s.t += dt; if (s.t >= s.dur) { this.sparks.release(s); continue; } s.x += s.vx * dt; s.y += s.vy * dt; s.vy += 4 * dt; const [sx, sy] = this.w2s(s.x, s.y); ctx.globalAlpha = 1 - s.t / s.dur; circle(ctx, sx, sy, 4, s.color, null); } ctx.globalAlpha = 1;
+    for (const p of this.popups.active.slice()) { p.t += dt; if (p.t >= p.dur) { this.popups.release(p); continue; } const k = p.t / p.dur; const [sx, sy] = this.w2s(p.x, p.y); ctx.globalAlpha = 1 - k * k; label(ctx, p.text, sx, sy - 0.6 * T - k * 40, p.size * (1 + 0.3 * Math.sin(Math.min(1, k * 3) * Math.PI)), p.color); } ctx.globalAlpha = 1;
+    for (const f of this.fly.active.slice()) { f.t += dt; if (f.t < 0) continue; if (f.t >= f.dur) { this.fly.release(f); if (this.onWallet) this.onWallet(); continue; } const k = f.t / f.dur, e = 1 - Math.pow(1 - k, 3); const x = lerp(f.sx, f.tx, e), y = lerp(f.sy, f.ty, e) - Math.sin(k * Math.PI) * 60; ctx.save(); ctx.translate(x, y); ctx.rotate(f.rot + k * 6); box(ctx, -11, -6, 22, 12, 3, '#4fb86a', INK, 2); ctx.restore(); }
+    for (const c of this.confetti.active.slice()) { c.t += dt; if (c.t >= c.dur) { this.confetti.release(c); continue; } c.x += c.vx * dt; c.y += c.vy * dt; c.vy += 600 * dt; c.rot += dt * 5; ctx.save(); ctx.translate(c.x, c.y); ctx.rotate(c.rot); ctx.globalAlpha = 1 - Math.pow(c.t / c.dur, 3); ctx.fillStyle = c.color; ctx.fillRect(-6, -4, 12, 8); ctx.restore(); } ctx.globalAlpha = 1; }
+  drawArrow() { const g = this.goal; if (!this.arrowOn || !g || g.type === 'done') return; const ctx = this.ctx, T = this.T, p = this.sim.player; const d = dist(p.x, p.y, g.x, g.y);
+    const [tx, ty] = this.w2s(g.x, g.y); const bob = Math.sin(this.time * 5) * 6; const col = g.type === 'save' ? '#fff3dc' : '#ffe27a';
+    const isPad = g.type === 'pad' || g.type === 'save' || g.type === 'pile'; const my = isPad ? ty - 1.3 * T - bob : ty - 0.95 * T - bob;
+    ctx.fillStyle = col; ctx.strokeStyle = INK; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(tx, my); ctx.lineTo(tx - 14, my - 0.3 * T); ctx.lineTo(tx + 14, my - 0.3 * T); ctx.closePath(); ctx.fill(); ctx.stroke();
+    if (!isPad) { ctx.font = '900 ' + Math.max(11, T * 0.2) + 'px Arial'; const lw = ctx.measureText(g.label).width / 2 + 12; pill(ctx, g.label, clamp(tx, lw, this.W - lw), my - 0.55 * T, Math.max(11, T * 0.2), INK, col); }
+    if (d > 1.6) { const [px, py] = this.w2s(p.x, p.y); const a = Math.atan2(ty - py, tx - px); const r = 1.05 * T + Math.sin(this.time * 6) * 5; const ax = px + Math.cos(a) * r, ay = py - 0.5 * T + Math.sin(a) * r;
+      ctx.save(); ctx.translate(ax, ay); ctx.rotate(a); ctx.fillStyle = col; ctx.beginPath(); ctx.moveTo(14, 0); ctx.lineTo(-8, -11); ctx.lineTo(-3, 0); ctx.lineTo(-8, 11); ctx.closePath(); ctx.fill(); ctx.stroke(); ctx.restore(); } }
+  drawJoystick() { const j = this.joy; if (!j || !j.active) return; const ctx = this.ctx; circle(ctx, j.bx, j.by, 52, 'rgba(255,255,255,0.15)', 'rgba(255,255,255,0.5)', 3); circle(ctx, j.bx + j.vx * 40, j.by + j.vy * 40, 26, 'rgba(255,243,220,0.8)', INK, 3); }
+}
+
+/* ---------------- 9. INPUT (floating joystick + keyboard) ---------------- */
+class Input {
+  constructor(canvas) { this.keys = {}; this.joy = { active: false, bx: 0, by: 0, vx: 0, vy: 0, id: null }; this.onFirst = null; this.touched = false;
+    canvas.addEventListener('pointerdown', e => { if (this.joy.active) return; this.joy.active = true; this.joy.id = e.pointerId; this.joy.bx = e.clientX; this.joy.by = e.clientY; this.joy.vx = this.joy.vy = 0; this.touched = true; try { canvas.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ } if (this.onFirst) this.onFirst(); });
+    canvas.addEventListener('pointermove', e => { if (!this.joy.active || e.pointerId !== this.joy.id) return; let dx = (e.clientX - this.joy.bx) / 48, dy = (e.clientY - this.joy.by) / 48; const l = Math.hypot(dx, dy); if (l > 1) { dx /= l; dy /= l; this.joy.bx = e.clientX - dx * 48; this.joy.by = e.clientY - dy * 48; } this.joy.vx = dx; this.joy.vy = dy; });
+    const up = e => { if (e.pointerId !== this.joy.id) return; this.joy.active = false; this.joy.vx = this.joy.vy = 0; this.joy.id = null; };
+    canvas.addEventListener('pointerup', up); canvas.addEventListener('pointercancel', up); canvas.addEventListener('lostpointercapture', up);
+    window.addEventListener('keydown', e => { if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(e.key)) e.preventDefault(); this.keys[e.key.toLowerCase()] = true; if (this.onFirst) this.onFirst(); });
+    window.addEventListener('keyup', e => { this.keys[e.key.toLowerCase()] = false; });
+    window.addEventListener('blur', () => { this.keys = {}; this.joy.active = false; this.joy.vx = this.joy.vy = 0; });
+  }
+  vector() { if (this.joy.active) return { x: this.joy.vx, y: this.joy.vy }; const k = this.keys; let x = 0, y = 0; if (k.a || k.arrowleft) x -= 1; if (k.d || k.arrowright) x += 1; if (k.w || k.arrowup) y -= 1; if (k.s || k.arrowdown) y += 1; const l = Math.hypot(x, y); return l > 1 ? { x: x / l, y: y / l } : { x, y }; }
+}
+
+/* ---------------- 10. UI (HUD + modals) ---------------- */
+class UI {
+  constructor(game) { this.g = game; const $ = id => document.getElementById(id); this.$ = $;
+    this.el = { cash: $('cash'), goalText: $('goalText'), goalBar: $('goalBar'), banner: $('banner'), toast: $('toast'), btnUpg: $('btnUpg'), stickHint: $('stickHint'), upgList: $('upgList'), upgCash: $('upgCash'), saveCode: $('saveCode'), statsLine: $('statsLine') };
+    this.lastCash = null; this.bannerT = 0; this.toastT = 0; this.welcome = null; this.chaChingT = 0;
+    $('verTag').textContent = VERSION;
+    $('btnStart').addEventListener('click', () => game.start());
+    $('btnSettings').addEventListener('click', () => { game.audio.play('click'); this.openSettings(); });
+    $('btnUpg').addEventListener('click', () => { game.audio.play('click'); this.openUpgrades(); });
+    $('btnCloseSettings').addEventListener('click', () => this.close('settings'));
+    $('btnCloseUpg').addEventListener('click', () => this.close('upgrades'));
+    $('btnExport').addEventListener('click', () => { this.el.saveCode.value = Save.encode(game.saveData()); this.toast('Save code ready. Copy it somewhere safe.'); try { this.el.saveCode.select(); } catch (e) { /* ignore */ } });
+    $('btnImport').addEventListener('click', () => { try { const data = Save.migrate(Save.decode(this.el.saveCode.value)); game.loadData(data); game.save(); this.toast('Save imported. Welcome back, boss.'); this.close('settings'); } catch (e) { this.toast('That code is cooked, mate: ' + e.message); } });
+    $('btnReset').addEventListener('click', () => { const b = $('btnReset'); if (b.dataset.armed) { Save.clear(); game.resetting = true; location.reload(); return; } b.dataset.armed = '1'; b.textContent = 'Tap again to wipe it'; this.toast('Export a save code first if you want it back.'); setTimeout(() => { delete b.dataset.armed; b.textContent = 'Reset save'; }, 3500); });
+    $('btnDouble').addEventListener('click', () => { if (!this.welcome) return; const w = this.welcome; game.sim.cash += w.cash; game.sim.totalEarned += w.cash; game.analytics.track('double_offline_tapped', { minutes_away: Math.round(w.seconds / 60), cash_earned: w.cash, doubled_to: w.cash * 2 }); game.audio.play('fanfare'); game.haptic([30, 30, 60]); game.renderer.spawnConfetti(80); this.welcome = null; this.close('welcome'); game.save(); });
+    $('btnWelcomeClose').addEventListener('click', () => { this.welcome = null; this.close('welcome'); });
+    $('btnServo2').addEventListener('click', () => { game.sim.flags.servo2Tapped = (game.sim.flags.servo2Tapped || 0) + 1; game.analytics.track('servo2_tapped', { play_minutes: Math.round(game.sim.playTime / 60), total_earned: Math.floor(game.sim.totalEarned) }); game.audio.play('hire'); this.toast("Logged, legend. Servo #2 is on the way."); game.save(); });
+    $('btnCompleteClose').addEventListener('click', () => this.close('complete'));
+    $('sfxVol').addEventListener('input', e => { game.settings.sfx = e.target.value / 100; game.audio.setSfx(game.settings.sfx); game.audio.play('coin'); });
+    $('musVol').addEventListener('input', e => { game.settings.music = e.target.value / 100; game.audio.setMusic(game.settings.music); });
+    this.bindToggle('tgHaptics', 'haptics', v => { if (v) game.haptic(20); }); this.bindToggle('tgArrow', 'arrow', v => { game.renderer.arrowOn = v; }); this.bindToggle('tgSpicy', 'spicy', v => { game.sim.spicy = v; }); this.bindToggle('tgAnalytics', 'analytics', v => game.analytics.setEnabled(v));
+    for (const m of document.querySelectorAll('.modal')) m.addEventListener('click', e => { if (e.target === m && m.id !== 'splash') this.close(m.id); });
+  }
+  bindToggle(id, key, cb) { const el = this.$(id); el.addEventListener('click', () => { this.g.settings[key] = !this.g.settings[key]; el.classList.toggle('on', this.g.settings[key]); this.g.audio.play('click'); cb(this.g.settings[key]); this.g.save(); }); }
+  syncSettings() { const s = this.g.settings; this.$('sfxVol').value = Math.round(s.sfx * 100); this.$('musVol').value = Math.round(s.music * 100); for (const [id, key] of [['tgHaptics', 'haptics'], ['tgArrow', 'arrow'], ['tgSpicy', 'spicy'], ['tgAnalytics', 'analytics']]) this.$(id).classList.toggle('on', !!s[key]); }
+  anyOpen() { return !!document.querySelector('.modal.open'); }
+  open(id) { this.$(id).classList.add('open'); } close(id) { this.$(id).classList.remove('open'); }
+  openSettings() { this.syncSettings(); const s = this.g.sim; this.el.statsLine.textContent = `v${VERSION} · played ${fmtTime(s.playTime)} · earned ${fmt(s.totalEarned)} · served ${s.stats.served} · lost ${s.stats.lost} · seagulls shooed ${s.stats.shooed}`; this.open('settings'); }
+  openUpgrades() { this.renderUpgrades(); this.open('upgrades'); }
+  renderUpgrades() { const s = this.g.sim; this.el.upgCash.textContent = fmt(s.cash); const list = this.el.upgList; list.innerHTML = '';
+    for (const u of UPGRADES) { const lv = s.upgrades[u.id], cost = s.upgradeCost(u.id), maxed = lv >= u.max; const row = document.createElement('div'); row.className = 'upg';
+      row.innerHTML = `<div class="ico">${u.icon}</div><div class="info"><b>${u.name}</b><small>${u.fx}. ${u.blurb}.</small><span class="lv">${'●'.repeat(lv)}${'○'.repeat(u.max - lv)}</span></div>`;
+      const btn = document.createElement('button'); btn.className = 'btn' + (maxed ? ' ghost' : s.cash >= cost ? ' green' : ''); btn.textContent = maxed ? 'MAXED' : fmt(cost); btn.disabled = maxed || s.cash < cost;
+      btn.addEventListener('click', () => { if (s.buyUpgrade(u.id)) { this.g.audio.play('build'); this.g.haptic(25); this.g.renderer.spawnConfetti(20, innerWidth / 2, innerHeight / 2); this.renderUpgrades(); this.g.save(); } });
+      row.appendChild(btn); list.appendChild(row); } }
+  banner(text, ms = 3500) { this.el.banner.textContent = text; this.el.banner.classList.add('show'); this.bannerT = ms / 1000; }
+  toast(text, ms = 2600) { this.el.toast.textContent = text; this.el.toast.classList.add('show'); this.toastT = ms / 1000; }
+  showWelcome(r) { const s = this.g.sim; this.welcome = r; s.cash += r.cash; s.totalEarned += r.cash; this.countFrom = 0; this.countT = 0; this.countTarget = r.cash;
+    this.$('welcomeAway').textContent = `You were gone ${fmtTime(r.seconds)}${r.capped ? ' (earnings cap at 2 hours)' : ''}.`;
+    const staff = Object.keys(s.staff).map(k => STAFF_INFO[k].name.split(' ')[0]); const eff = Math.round((ECON.offlineBase + ECON.offlinePerStaff * s.staffCount) * 100);
+    this.$('welcomeLine').textContent = staff.length ? `${staff.join(', ')} kept the place ticking over at ${eff}% while you were off. Smoko was long.` : `No staff yet, so the pumps did what they could at ${eff}%. Hire Gav and Val for more.`;
+    this.$('welcomeNum').textContent = '$0'; this.open('welcome'); this.g.audio.play('chaching'); }
+  showComplete() { const s = this.g.sim; this.$('completeNum').textContent = fmt(s.totalEarned); this.$('completeLine').textContent = `${fmtTime(s.playTime)} of active play · ${s.stats.served} served · ${s.stats.cars} cars · ${s.stats.shooed} seagulls shooed`; this.open('complete'); this.g.renderer.spawnConfetti(220); this.g.audio.play('fanfare'); this.g.haptic([50, 40, 50, 40, 120]); }
+  tick(dt) { const s = this.g.sim; const r = this.g.renderer;
+    const cash = Math.floor(s.cash); if (cash !== this.lastCash) { this.lastCash = cash; this.el.cash.textContent = fmt(cash); }
+    const g = r.goal; if (g) { let txt = g.label, frac = 0; if (g.type === 'save' || g.type === 'pad') { const st = STATION_BY_ID[g.id]; const rem = st.cost - (s.paid[g.id] || 0); frac = clamp((s.cash + (s.paid[g.id] || 0)) / st.cost, 0, 1); txt = g.type === 'save' ? st.name + ' · need ' + fmt(rem) : 'Build ' + st.name + ' now!'; } else if (g.type === 'done') { frac = 1; txt = 'Map complete! Upgrades keep the numbers climbing.'; } else { frac = 1; }
+      if (txt !== this.lastGoal) { this.lastGoal = txt; this.el.goalText.textContent = txt; } this.el.goalBar.style.width = Math.round(frac * 100) + '%'; }
+    if (this.bannerT > 0) { this.bannerT -= dt; if (this.bannerT <= 0) this.el.banner.classList.remove('show'); }
+    if (this.toastT > 0) { this.toastT -= dt; if (this.toastT <= 0) this.el.toast.classList.remove('show'); }
+    if (this.welcome && this.countT < 1.6) { this.countT += dt; const k = Math.min(1, this.countT / 1.5), e = 1 - Math.pow(1 - k, 3); this.$('welcomeNum').textContent = fmt(this.countTarget * e); if (Math.floor(this.countT * 12) !== Math.floor((this.countT - dt) * 12)) this.g.audio.play('coin'); }
+    if (this.chaChingT > 0) this.chaChingT -= dt;
+    this.el.btnUpg.style.display = s.built.office ? '' : 'none';
+    this.layoutT = (this.layoutT || 0) - dt; if (this.layoutT <= 0) { this.layoutT = 0.5; const rect = this.el.cash.getBoundingClientRect(); r.walletPos.x = rect.left + rect.width / 2; r.walletPos.y = rect.top + rect.height / 2;
+      if (this.$('upgrades').classList.contains('open')) this.renderUpgrades(); }
+  }
+  handleFx(f) { const g = this.g, r = g.renderer, a = g.audio;
+    switch (f.t) {
+      case 'cash': r.spawnCash(f.x, f.y, f.amount); r.spawnPopup(f.x, f.y, '+' + fmt(f.amount), '#ffe27a', 16); if (this.chaChingT <= 0) { a.play('chaching'); this.chaChingT = 0.12; } g.haptic(12); break;
+      case 'serve': r.spawnPopup(f.x + 1, f.y, '+' + fmt(f.amount), '#4fb86a', 13); a.play('coin'); break;
+      case 'paid': r.spawnPopup(f.x, f.y, '+' + fmt(f.amount), '#4fb86a', 13); a.play('coin'); break;
+      case 'pick': a.play('pick'); break;
+      case 'drop': if (!f.staff) a.play('drop'); break;
+      case 'pad': a.play('pad'); r.spawnSparks(f.x + (Math.random() - 0.5), f.y + (Math.random() - 0.5), 2, '#4fb86a'); break;
+      case 'build': { const st = STATION_BY_ID[f.id]; a.play(st.kind === 'hire' ? 'hire' : 'build'); g.haptic([30, 30, 60]); const [sx, sy] = r.w2s(f.x, f.y); r.spawnConfetti(50, sx, sy); r.flash = 0.6; if (st.kind !== 'hire') this.toast('🎉 Built: ' + st.name + '. ' + st.blurb, 3200); if (f.id === 'office') { this.toast('🛠️ Back Office open. Walk in or tap the spanner for upgrades.', 3600); } this.el.stickHint.style.opacity = '0'; break; }
+      case 'hire': { const info = STAFF_INFO[f.staff]; this.toast('🤝 Hired ' + info.name + ': ' + info.job + '.', 4000); break; }
+      case 'event': if (f.kind === 'rush') { this.banner('🛻 TRADIE RUSH! Ute convoy inbound. Customers ×2 for 30 seconds!', 4500); a.play('horn'); } else { this.banner('🐦 SEAGULL RAID! Walk into the gulls before they nick the pies!', 4500); a.play('squawk'); } g.haptic([40, 30, 40]); break;
+      case 'eventEnd': if (f.kind === 'rush') this.banner('Rush over. Count the cash, legend.', 2200); else this.banner('Gulls gone. ' + (g.sim.stats.stolen ? 'Cheeky buggers.' : 'Not a single pie lost!'), 2200); break;
+      case 'shoo': a.play('squawk'); r.spawnPopup(f.x, f.y, 'SHOO!', '#fff', 16); g.haptic(20); break;
+      case 'steal': a.play('squawk'); r.spawnPopup(f.x, f.y, '-1 pie', '#d64b2a', 14); break;
+      case 'lost': a.play('sad'); r.spawnPopup(f.x, f.y, 'lost sale', '#d64b2a', 12); break;
+      case 'office': if (!this.anyOpen()) { a.play('click'); this.openUpgrades(); } break;
+      case 'upgrade': break;
+      case 'complete': this.showComplete(); break;
+    } }
+}
+
+/* ---------------- 11. GAME (loop, pause, offline, save) + BOOT ---------------- */
+class Game {
+  constructor() {
+    this.analytics = new Analytics(); this.audio = new AudioEngine();
+    this.settings = { sfx: 0.8, music: 0.45, haptics: true, arrow: true, spicy: true, analytics: true };
+    this.sim = new Sim({ seed: (Date.now() % 100000) | 1, track: (e, p) => this.analytics.track(e, p) });
+    this.returning = false; this.pendingAway = 0; this.paused = false; this.started = false; this.hiddenAt = null; this.acc = 0; this.last = 0; this.saveT = 0; this.resetting = false;
+    const data = Save.read(); if (data) { this.loadData(data); this.returning = true; this.pendingAway = (Date.now() - (data.lastSeen || Date.now())) / 1000; }
+    this.analytics.setEnabled(this.settings.analytics);
+    this.canvas = document.getElementById('game'); this.renderer = new Renderer(this.canvas, this.sim); this.input = new Input(this.canvas); this.ui = new UI(this);
+    this.renderer.arrowOn = this.settings.arrow; this.renderer.joy = this.input.joy; this.renderer.onWallet = () => { const el = this.ui.el.cash; el.classList.add('pulse'); clearTimeout(this._pulseT); this._pulseT = setTimeout(() => el.classList.remove('pulse'), 90); };
+    this.input.onFirst = () => { this.audio.init(); this.audio.resume(); };
+    this.resize(); window.addEventListener('resize', () => this.resize()); if (window.visualViewport) window.visualViewport.addEventListener('resize', () => this.resize());
+    document.addEventListener('visibilitychange', () => document.hidden ? this.onHide() : this.onShow());
+    window.addEventListener('pagehide', () => this.onHide()); window.addEventListener('beforeunload', () => { if (!this.resetting) this.save(); });
+    this.ui.syncSettings(); this.ui.tick(0);
+    this.analytics.track('session_start', { returning: this.returning, version: VERSION, viewport_w: innerWidth, viewport_h: innerHeight, touch: 'ontouchstart' in window, stations_built: Object.keys(this.sim.built).length });
+  }
+  resize() { this.renderer.resize(innerWidth, innerHeight, devicePixelRatio || 1); }
+  loadData(data) { this.sim.load(data); if (data.settings) Object.assign(this.settings, data.settings); this.sim.spicy = this.settings.spicy; if (this.renderer) this.renderer.arrowOn = this.settings.arrow; this.audio.setSfx(this.settings.sfx); this.audio.setMusic(this.settings.music); }
+  saveData() { const d = this.sim.toJSON(); d.settings = this.settings; return d; }
+  save() { if (this.resetting) return false; return Save.write(this.saveData()); }
+  haptic(p) { if (this.settings.haptics && navigator.vibrate) { try { navigator.vibrate(p); } catch (e) { /* ignore */ } } }
+  start() {
+    if (this.started) return; this.started = true; this.audio.init(); this.audio.resume(); this.audio.setSfx(this.settings.sfx); this.audio.setMusic(this.settings.music); this.audio.play('click');
+    this.ui.close('splash'); this.ui.el.stickHint.style.display = ''; if (Object.keys(this.sim.built).length > 0) this.ui.el.stickHint.style.opacity = '0';
+    if (this.returning) this.handleReturn(this.pendingAway);
+    this.last = performance.now(); requestAnimationFrame(ts => this.loop(ts));
+  }
+  handleReturn(awaySec) { if (!(awaySec >= 60)) return; const r = this.sim.offlineEarnings(awaySec); this.analytics.track('offline_return', { minutes_away: Math.round(Math.min(awaySec, ECON.offlineCapSec) / 60), minutes_away_raw: Math.round(awaySec / 60), cash_earned: r.cash, capped: r.capped, staff: this.sim.staffCount });
+    if (r.cash > 0) this.ui.showWelcome(r); this.save(); }
+  onHide() { if (this.hiddenAt !== null) return; this.hiddenAt = Date.now(); this.paused = true; this.save(); if (this.audio.ctx) this.audio.ctx.suspend(); }
+  onShow() { if (this.hiddenAt === null) return; const away = (Date.now() - this.hiddenAt) / 1000; this.hiddenAt = null; this.paused = false; this.last = performance.now(); this.acc = 0; this.audio.resume(); if (this.started) this.handleReturn(away); }
+  loop(ts) {
+    const real = Math.max(0, (ts - this.last) / 1000); this.last = ts;
+    if (!this.paused) {
+      if (real > 60) { this.handleReturn(real); } // phone slept without a visibility event: treat the gap as offline time (capped by the offline model)
+      else this.acc += Math.min(real, 0.25);
+      const modal = this.ui.anyOpen();
+      if (this.bot && !modal) this.sim.autopilot(this.renderer.goal || this.sim.nextGoal(), real); // test hook: window.__servo.bot = true drives the player to its next goal
+      else { const v = modal ? { x: 0, y: 0 } : this.input.vector(); this.sim.input.x = v.x; this.sim.input.y = v.y; }
+      let steps = 0; while (this.acc >= SIM_DT && steps < 16) { this.sim.step(SIM_DT); this.acc -= SIM_DT; steps++; }
+      for (const f of this.sim.fx) this.ui.handleFx(f); this.sim.fx.length = 0;
+      this.renderer.render(Math.min(real, 0.1)); this.ui.tick(Math.min(real, 0.1));
+      this.saveT += real; if (this.saveT >= 5) { this.saveT = 0; this.save(); }
+    }
+    requestAnimationFrame(t => this.loop(t));
+  }
+}
+globalThis.ServoEmpire = { Sim, ECON, UPGRADES, STATIONS, STATION_BY_ID, ORDER, MAP, Save, fmt, fmtNum, fmtTime, RNG, Grid, LINES, SAVE_VERSION, VERSION, Analytics, Pool };
+if (!HEADLESS) { window.addEventListener('DOMContentLoaded', () => { window.__servo = new Game(); }); if (document.readyState !== 'loading') { window.__servo = window.__servo || new Game(); } }
+</script>
+</body>
+</html>
