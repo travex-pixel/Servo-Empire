@@ -27,7 +27,11 @@ Open `index.html` in any modern browser, or host it (see below). Tap **OPEN UP, 
 - **Warmers / coffee machine / oven**: walk up to the tray to grab stock, walk to the counter to drop it.
 - **Counter**: stand at the **SERVE** spot to serve the queue until Aunty Val is hired.
 - **Back Office**: stand still at the desk for half a second (or tap the spanner) to open the upgrade board.
-- **Chaos events** every 2-3 minutes: Tradie Rush (double customers for 30 s) and Seagull Raid (walk into the gulls before they nick your pies).
+- **Chaos events** every 2-3 minutes: Tradie Rush (double customers for 30 s), Seagull Raid (walk into the gulls before they nick your pies) and Bin Chicken Raid (ibis land on your cash piles and start eating; run them off, or let Shazza do it).
+- **Hustle**: grabbing stock, dropping it, serving and collecting cash builds a combo meter under your wallet. It adds up to +50% to cash piles you collect yourself, and drains if you stand around. Staff and offline earnings never get it.
+- **Road trains** occasionally pull into a pump and pay four times as much.
+- **Day and night**: a full cycle every 6 minutes of play, with the neon sign, pump lights and headlights coming on after dark.
+- **Name your servo** on the start screen or in Settings. The sign and billboard use it.
 - Settings (⚙️): sound and music sliders, haptics, guide arrow, spicy language, anonymous analytics on/off, save code export/import, reset.
 
 ## Host it on GitHub Pages
