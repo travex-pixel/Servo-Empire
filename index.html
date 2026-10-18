@@ -39,6 +39,17 @@ canvas#game{position:fixed;inset:0;width:100%;height:100%;display:block;}
 .upg .nx{color:#2d7a3e;font-weight:900;}
 #goal{flex:1 1 420px;font-size:13px;line-height:1.2;min-width:0;max-width:420px;}
 #hud .spacer{flex:1 1 0;}
+#servoBar{position:fixed;right:10px;top:calc(env(safe-area-inset-top) + 64px);display:flex;flex-direction:column;gap:6px;align-items:flex-end;z-index:5;pointer-events:none;}
+.pill.mini{font-size:12px;padding:4px 10px;border-width:2px;border-radius:12px;}
+#fuelPill.low{background:#d64b2a;animation:blink .5s infinite alternate;}@keyframes blink{to{opacity:.55}}
+#rival{display:flex;align-items:center;gap:6px;}#rival .rbar{display:block;width:84px;height:9px;border-radius:5px;background:#7a2a8a;overflow:hidden;border:2px solid #1a0d0a;}#rival .rbar i{display:block;height:100%;width:50%;background:#4fb86a;}
+.card.net{width:min(480px,100%);}#netMap{width:100%;height:auto;display:block;border-radius:14px;border:3px solid var(--ink);background:#2a6f97;margin:6px 0 4px;}
+.srow{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:2px dashed rgba(43,26,20,.2);}.srow .info{flex:1;min-width:0}.srow .info b{display:block}.srow .info small{opacity:.75;font-size:12px}.srow .btn{font-size:14px;padding:8px 10px;flex:none}
+.bigthings{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;}.bigthings .bt{border:3px dashed rgba(43,26,20,.35);border-radius:12px;min-height:80px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:900;font-size:13px;text-align:center;padding:6px;}
+.bigthings .bt img{width:100%;border-radius:8px;border:2px solid var(--ink);}
+.thongwall{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;}.thongwall .th{background:#efe2c6;border:2px solid rgba(43,26,20,.25);border-radius:10px;text-align:center;font-size:10px;font-weight:900;padding:4px 2px;line-height:1.1;}.thongwall .th canvas{width:44px;height:44px;display:block;margin:0 auto 2px;}
+.thongwall .th.r2{border-color:#2b7fd1}.thongwall .th.r3{border-color:#d4a017;background:#fff3c4}.thongwall .th.no{opacity:.45}
+#travel{background:#2a1020;padding:0}#travelCv{position:absolute;inset:0;width:100%;height:100%;}.travel-txt{position:absolute;left:0;right:0;top:18%;text-align:center;color:#fff3dc;font-weight:900;font-size:26px;text-shadow:3px 3px 0 #2b1a14;padding:0 16px;}
 #goalText{font-size:12px;line-height:1.15;max-height:28px;overflow:hidden;}
 #goal .bar{height:8px;border-radius:6px;background:#1a0d0a;margin-top:4px;overflow:hidden;border:2px solid #1a0d0a;}
 #goal .bar i{display:block;height:100%;background:var(--green);width:0%;transition:width .2s;}
@@ -91,9 +102,11 @@ textarea{width:100%;height:64px;font-family:monospace;font-size:12px;border:3px 
   <div class="wallet"><div class="pill" id="cash">$0</div><div id="hustle"><b id="hustleTxt">HUSTLE ×1.0</b><span class="hbar"><i id="hustleBar"></i></span></div></div>
   <div class="pill" id="goal"><div id="goalText">Next: open up</div><div class="bar"><i id="goalBar"></i></div></div>
   <div class="spacer"></div>
+  <button class="btn icon" id="btnMap" style="display:none" title="Servo Network" aria-label="Servo Network">🗺️</button>
   <button class="btn icon" id="btnUpg" style="display:none" title="Upgrades" aria-label="Upgrades">🛠️</button>
   <button class="btn icon" id="btnSettings" title="Settings" aria-label="Settings">⚙️</button>
 </div>
+<div id="servoBar" style="display:none"><div class="pill mini" id="fuelPill">TANK 0/60</div><div class="pill mini" id="rival"><b>YOU</b><span class="rbar"><i id="rivalBar"></i></span><b>PETE</b></div></div>
 <div id="banner"></div>
 <div id="toast"></div>
 <div id="stickHint" style="display:none">Drag anywhere to walk · WASD / arrows on desktop</div>
@@ -151,16 +164,33 @@ textarea{width:100%;height:64px;font-family:monospace;font-size:12px;border:3px 
 
 <div class="modal" id="complete">
   <div class="card center">
-    <h2>🥧 SERVO LEGEND</h2>
-    <p>Every pad built. The Big Pie stands proud. Grey nomads are weeping with joy.</p>
+    <h2 id="completeTitle">🥧 SERVO LEGEND</h2>
+    <p id="completeText">Every pad built. The Big Pie stands proud. Grey nomads are weeping with joy.</p>
     <div class="big-num" id="completeNum">$0</div>
     <p class="footnote" id="completeLine"></p>
     <div class="stack">
-      <button class="btn big" id="btnServo2">OPEN SERVO #2 <small style="display:block;font-size:12px;opacity:.85">(coming soon)</small></button>
+      <button class="btn big green" id="btnServo2">HIT THE ROAD <small style="display:block;font-size:12px;opacity:.9" id="btnServo2Sub">to the Nullarbor</small></button>
       <button class="btn ghost" id="btnCompleteClose">Keep running this one</button>
     </div>
   </div>
 </div>
+
+<div class="modal" id="network">
+  <div class="card net">
+    <h2>🗺️ Servo Network</h2>
+    <canvas id="netMap" width="720" height="560" aria-label="Map of Australia showing your servos"></canvas>
+    <div id="netList"></div>
+    <h3>Big Things</h3><div id="bigThings" class="bigthings"></div>
+    <h3>Thong Wall <span class="tag" id="thongCount">0/16</span></h3><p class="footnote" id="thongNote"></p><div id="thongWall" class="thongwall"></div>
+    <div class="rowbtns"><button class="btn" id="btnCloseNet">Back to work</button></div>
+  </div>
+</div>
+<div class="modal" id="postcard">
+  <div class="card center"><h2>📮 Postcard</h2><img id="postcardImg" alt="Postcard of your servo's Big Thing" style="width:100%;border-radius:10px;border:3px solid #2b1a14;display:block">
+    <p class="footnote" id="postcardNote">Saved to your Servo Network. Long-press it to save to your phone.</p>
+    <div class="rowbtns"><button class="btn ghost" id="btnSharePc">Share</button><button class="btn green" id="btnClosePc">Ripper</button></div></div>
+</div>
+<div class="modal" id="travel"><canvas id="travelCv"></canvas><div class="travel-txt" id="travelTxt">Hitting the road…</div></div>
 
 <script>
 'use strict';
@@ -170,8 +200,8 @@ textarea{width:100%;height:64px;font-family:monospace;font-size:12px;border:3px 
              7 Sim (pure, no DOM)  8 renderer  9 input  10 UI  11 boot
    ========================================================================= */
 const HEADLESS = (typeof window === 'undefined') || !!globalThis.SERVO_HEADLESS;
-const VERSION = '0.2.0';
-const SAVE_VERSION = 2;
+const VERSION = '0.3.0';
+const SAVE_VERSION = 3;
 const SAVE_KEY = 'servoEmpire.save';
 const SAVE_BACKUP_KEY = 'servoEmpire.save.bak';
 const POSTHOG_KEY = 'phc_REPLACE_ME_WITH_YOUR_PROJECT_KEY'; // <- fill in. Placeholder keys never load PostHog.
@@ -206,15 +236,29 @@ const ECON = {
   hustleGain: 0.07, hustleHold: 2.5, hustleDecay: 0.12, hustleMax: 0.5, // active-play combo: up to +50% on cash you grab yourself
   roadTrainChance: 0.08, roadTrainPay: 4, roadTrainFill: 1.6,
   ibis: 2, ibisEatRate: 0.15, ibisDur: 22,
+  netShare: 0.25, netInterval: 40,          // finished servos ship 25% of their idle income to the one you're playing
+  thongChance: 1 / 55, thongBonus: 0.01,    // happy customers sometimes drop a thong; each new design is +1% prices everywhere
+  shareServe: 0.0012, shareCar: 0.0008, shareRepair: 0.005, shareLost: 0.02, shareDry: 0.03, priceWarDur: 30, priceWarHold: 2.5, priceWarMult: 0.55,
 };
+const THONGS = [ // the Thong Wall: 16 designs, found at random from happy customers (never sold, never paid for)
+  { id: 'black', name: 'Plain Black', col: '#222', strap: '#555', r: 1 }, { id: 'blue', name: 'Servo Blue', col: '#2b7fd1', strap: '#fff', r: 1 }, { id: 'red', name: 'Fire Engine', col: '#d64b2a', strap: '#222', r: 1 },
+  { id: 'green', name: 'Bush Green', col: '#2d7a3e', strap: '#f3c623', r: 1 }, { id: 'pink', name: 'Fairy Floss', col: '#f15bb5', strap: '#fff', r: 1 }, { id: 'white', name: 'Bowls Club', col: '#f2f2f2', strap: '#2b7fd1', r: 1 },
+  { id: 'aussie', name: 'Green & Gold', col: '#2d7a3e', strap: '#ffd34d', r: 2 }, { id: 'footy', name: 'Footy Colours', col: '#1f3b8a', strap: '#d64b2a', r: 2 }, { id: 'xmas', name: 'Christmas Arvo', col: '#d64b2a', strap: '#4fb86a', r: 2 },
+  { id: 'camo', name: 'Pig Hunter Camo', col: '#6b7a3a', strap: '#3a2a1a', r: 2 }, { id: 'reef', name: 'Reef Teal', col: '#00bbbf', strap: '#ffe27a', r: 2 }, { id: 'snag', name: 'Democracy Snag', col: '#c98a4a', strap: '#d64b2a', r: 2 },
+  { id: 'gold', name: '24-Carat Bogan', col: '#ffd34d', strap: '#b8860b', r: 3 }, { id: 'opal', name: 'Coober Opal', col: '#7fd6e8', strap: '#f15bb5', r: 3 }, { id: 'ufo', name: 'Glow-in-the-Dark', col: '#9dff6a', strap: '#2b1a14', r: 3 },
+  { id: 'nan', name: "Nan's Bedazzled", col: '#9b5de5', strap: '#ffe27a', r: 3 },
+];
+const THONG_BY_ID = Object.fromEntries(THONGS.map(t => [t.id, t]));
 const UPGRADES = [
-  { id: 'walk',    icon: '👟', name: 'Walk Speed',     fx: '+12% walk speed per level',        base: 80,  mult: 1.6, max: 8, blurb: 'Thongs → Volleys → actual runners' },
-  { id: 'carry',   icon: '🧺', name: 'Carry Capacity', fx: '+2 items carried per level',       base: 120, mult: 1.6,  max: 8, blurb: 'Bigger arms, bigger esky' },
+  { id: 'walk',    icon: '👟', name: 'Walk Speed',     fx: '+12% walk speed per level',        base: 80,  mult: 1.6, max: 10, crew: true, blurb: 'Thongs → Volleys → actual runners' },
+  { id: 'carry',   icon: '🧺', name: 'Carry Capacity', fx: '+2 items carried per level',       base: 120, mult: 1.6,  max: 10, crew: true, blurb: 'Bigger arms, bigger esky' },
   { id: 'station', icon: '🔥', name: 'Station Speed',  fx: '+15% cooking & pumping per level', base: 150, mult: 1.6,  max: 8, blurb: 'Turn the pie warmer up to "surface of the sun"' },
   { id: 'price',   icon: '💸', name: 'Prices',         fx: '+20% on everything per level',     base: 200, mult: 1.6,  max: 8, blurb: 'Highway tax, mate' },
-  { id: 'staff',   icon: '⚡', name: 'Staff Speed',    fx: '+20% staff speed per level',       base: 150, mult: 1.6,  max: 8, blurb: 'Shorter smokos' },
+  { id: 'staff',   icon: '⚡', name: 'Staff Speed',    fx: '+20% staff speed per level',       base: 150, mult: 1.6,  max: 10, crew: true, blurb: 'Shorter smokos' },
 ];
 const STAFF_INFO = {
+  trev:   { name: 'Tanker Trev',    job: 'hauls fuel drums from the depot to the tank', hireLine: "Drums? I was born under a drum, mate." },
+  mick:   { name: 'Mick the Mechanic', job: 'fixes roo-damaged cars at the Mechanic Bay', hireLine: "She's not a dent, she's a feature. That'll be $200." },
   gav:    { name: 'Gav the Tradie', job: 'restocks the counter from the warmers', hireLine: "Righto boss. Where's the pies?" },
   val:    { name: 'Aunty Val',      job: 'works the register so the counter serves itself', hireLine: "Love, I've run a till since before you were born." },
   shazza: { name: 'Shazza',         job: 'pump attendant, collects the pump & car wash cash', hireLine: "Pumps are mine now. Don't touch nothin'." },
@@ -271,10 +315,20 @@ const HAPPY_LINES = ["Cheers legend!", "Ripper.", "Too easy.", "Bloody beauty.",
 const SAD_LINES = ["Nah, I'm off.", "Yeah nah. Bye.", "Petrol Pete's it is.", "Cooked. Absolutely cooked."];
 const CAR_LINES = ["Fill 'er up, cobber.", "Me ute drinks more than me.", "Dunno what diesel is but I want it.", "Is that pie smell coming from here?", "Beep beep, legends."];
 const SEAGULL_LINE = "MINE. MINE. MINE.";
+const NULLARBOR_LINES = [ // extra lines that only show at the Nullarbor
+  ["146 km of dead straight road. I've seen God. He drives a Hilux.", 0], ["Is this the last servo before Perth? Asking for me bladder.", 0], ["Hit a roo at Caiguna. The roo's fine. Me bonnet isn't.", 0],
+  ["Petrol Pete wanted $4 a litre. You're a saint.", 0], ["Saw a whale off the cliffs. Then I saw your pies. Tough call.", 0], ["Wombat, camel, roo. The sign wasn't lying.", 0],
+  ["Me caravan's called Bev. Bev needs diesel.", 0], ["We're doing the Big Lap. This is lap two. Don't ask.", 0], ["Golf course across the Nullarbor? Mate, I've lost six balls to emus.", 0],
+  ["Dead straight for 146 km and I still nearly missed you.", 0], ["Pete's dim sims gave me the bubble guts.", 0], ["Whatever you do, don't drive this at night. ...Says the bloke driving it at night.", 0],
+  ["Bloody hell, a working toilet. Five stars.", 0], ["Bloody roos, I've spent more on bull bars than me house.", 1], ["Pete's is cooked, mate. Cooked as a Christmas prawn.", 1],
+];
+const DRY_LINES = ["Tank's DRY?! Pete's it is.", "No diesel? At a servo? Strewth.", "Empty bowser. Unreal."];
+const FIXED_LINES = ["Good as new. Better, actually.", "Mick's a wizard.", "Back on the road!"];
 
 /* ---------------- 2. UTILS ---------------- */
 const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
 const lerp = (a, b, t) => a + (b - a) * t;
+const smooth = t => t <= 0 ? 0 : t >= 1 ? 1 : t * t * (3 - 2 * t);
 const dist = (ax, ay, bx, by) => Math.hypot(ax - bx, ay - by);
 function fmtNum(n) { n = Math.floor(n); const a = Math.abs(n); let s;
   if (a < 1000) s = String(a); else if (a < 1e6) s = trim1(a / 1e3) + 'K'; else if (a < 1e9) s = trim1(a / 1e6) + 'M'; else s = trim1(a / 1e9) + 'B';
@@ -411,6 +465,10 @@ const Save = {
         settings: data.settings || {} };
       v = 2;
     }
+    if (v === 2) { // v2 -> v3: the save becomes "active servo at top level" + the rest of the network
+      data = Object.assign({}, data, { v: 3, active: 'outback', others: {}, unlocked: { outback: true, nullarbor: !!(data.flags && data.flags.mapComplete) }, bigThings: (data.built && data.built.bigpie) ? { outback: true } : {}, thongs: {}, netAccum: 0 });
+      v = 3;
+    }
     if (v !== SAVE_VERSION) throw new Error('Unsupported save version ' + v);
     return data;
   },
@@ -422,12 +480,12 @@ const Save = {
   clear() { const st = this.storage(); if (!st) return; st.removeItem(SAVE_KEY); st.removeItem(SAVE_BACKUP_KEY); },
 };
 
-/* ---------------- 6. MAP, STATIONS, PATHFINDING ---------------- */
-const MAP = { W: 12, H: 22, laneX: 1.3, passLaneX: 0.45, shop: { x: 6, y: 2, w: 6, h: 16 }, door: [{ x: 6, y: 9 }, { x: 6, y: 10 }],
+/* ---------------- 6. SERVOS (maps + stations), PATHFINDING ---------------- */
+const OUTBACK_MAP = { W: 12, H: 22, laneX: 1.3, passLaneX: 0.45, shop: { x: 6, y: 2, w: 6, h: 16 }, door: [{ x: 6, y: 9 }, { x: 6, y: 10 }],
   spawn: { x: 5.5, y: 21.6 }, exit: { x: 5.5, y: 21.6 }, playerStart: { x: 5.5, y: 7.5 }, serveSpot: { x: 9.5, y: 5.5 },
   queue: [{ x: 8.5, y: 5.5 }, { x: 8.5, y: 6.5 }, { x: 8.5, y: 7.5 }, { x: 8.5, y: 8.5 }, { x: 7.5, y: 8.5 }, { x: 7.5, y: 7.5 }, { x: 7.5, y: 6.5 }, { x: 7.5, y: 5.5 }],
   props: [[5, 2], [5, 3], [2, 2]], valSpot: { x: 8.5, y: 3.5 }, gavIdle: { x: 9.5, y: 9.5 }, shazzaIdle: { x: 5.5, y: 11.5 } };
-const STATIONS = [
+const OUTBACK_STATIONS = [
   { id: 'pump1',     name: 'Fuel Pump 1',      kind: 'pump',     cost: 10,   x: 4,  y: 5,  w: 1, h: 1, carStop: { x: 2.7, y: 5.5 },  pile: { x: 4.5, y: 6.5 },  collect: { x: 5.5, y: 6.5 },  icon: '⛽', blurb: 'Cars pull in, fill up, leave cash. Grab it.' },
   { id: 'pie',       name: 'Pie Warmer',       kind: 'maker', item: 'pie',    cost: 30,   x: 10, y: 6,  w: 1, h: 1, interact: { x: 9.5, y: 6.5 },  icon: '🥧', blurb: 'Bakes pies onto the tray. Carry them to the counter.' },
   { id: 'counter',   name: 'Front Counter',    kind: 'counter',  cost: 50,   x: 7,  y: 4,  w: 3, h: 1, interact: { x: 9.5, y: 5.5 }, pile: { x: 7.5, y: 4.5 }, icon: '🧾', blurb: 'Walk-ins queue here. Stand at the till to serve.' },
@@ -443,9 +501,48 @@ const STATIONS = [
   { id: 'till2',     name: 'Second Till',      kind: 'till2',    cost: 4600, x: 10, y: 4,  w: 1, h: 1, icon: '💳', blurb: 'Serve faster, longer queue, +30% walk-ins.' },
   { id: 'carwash',   name: 'Car Wash',         kind: 'carwash',  cost: 4800, x: 3,  y: 17, w: 2, h: 2, carStop: { x: 4, y: 18 }, pile: { x: 2.5, y: 19.5 }, collect: { x: 5.5, y: 18.5 }, icon: '🚿', blurb: 'Big money. Cars leave sparkling.' },
   { id: 'bigpie',    name: 'The Big Pie',      kind: 'bigpie',   cost: 7000, x: 3,  y: 20, w: 2, h: 1, icon: '🥧', blurb: 'A Big Thing. Tourists lose their minds. +25% everything.' },
+  NETWORK_STATION(5.3, 20.3),
 ];
-const STATION_BY_ID = Object.fromEntries(STATIONS.map(s => [s.id, s]));
-const ORDER = STATIONS.map(s => s.id);
+/* a "meta" station: never a pad, never drawn; it only gives network deliveries a cash-pile spot */
+function NETWORK_STATION(x, y) { return { id: 'network', name: 'Network delivery', kind: 'delivery', meta: true, cost: 0, x: Math.floor(x), y: Math.floor(y), w: 1, h: 1, pile: { x, y }, collect: { x: x + 0.2, y: y + 0.3 } }; }
+const SERVOS = {
+  outback: { id: 'outback', name: 'Stuart Hwy Servo', place: 'Stuart Highway, NT', signWord: 'SERVO', bigThing: 'bigpie', bigThingName: 'The Big Pie', items: ['pie', 'coffee', 'roll'], events: ['rush', 'seagulls', 'ibis'],
+    map: OUTBACK_MAP, stations: OUTBACK_STATIONS, econ: { pump: ECON.pump, carwash: ECON.carwash, customer: ECON.customer, makers: ECON.makers }, geo: { lon: 133.6, lat: -23.2 }, km: 0 },
+};
+const NULLARBOR_MAP = Object.assign({}, OUTBACK_MAP, { props: [[5, 2], [5, 4]], tank: { x: 5, y: 4, w: 1, h: 1 }, priceBoard: { x: 5, y: 2, w: 1, h: 1 }, priceSpot: { x: 5.5, y: 3.2 }, mickSpot: { x: 3.55, y: 3.45 }, trevIdle: { x: 5.5, y: 16.5 } });
+const NULLARBOR_STATIONS = [
+  { id: 'pump1',    name: 'Diesel Pump 1',     kind: 'pump',     cost: 40,    x: 4,  y: 5,  w: 1, h: 1, carStop: { x: 2.7, y: 5.5 },  pile: { x: 4.5, y: 6.5 },  collect: { x: 5.5, y: 6.5 },  blurb: 'Every litre comes out of your tank. Watch the gauge.' },
+  { id: 'pie',      name: 'Pie Warmer',        kind: 'maker', item: 'pie',    cost: 150,   x: 10, y: 6,  w: 1, h: 1, interact: { x: 9.5, y: 6.5 },  blurb: 'Pies taste better after 1,000 km.' },
+  { id: 'counter',  name: 'Front Counter',     kind: 'counter',  cost: 400,   x: 7,  y: 4,  w: 3, h: 1, interact: { x: 9.5, y: 5.5 }, pile: { x: 7.5, y: 4.5 }, blurb: 'Walk-ins queue here. Stand at the till to serve.' },
+  { id: 'depot',    name: 'Fuel Depot',        kind: 'depot',    cost: 900,   x: 3,  y: 17, w: 2, h: 2, carStop: { x: 4, y: 18 }, interact: { x: 5.5, y: 18.5 }, blurb: 'The tanker drops fuel drums here. Carry them up to the tank.' },
+  { id: 'pump2',    name: 'Diesel Pump 2',     kind: 'pump',     cost: 1500,   x: 4,  y: 9,  w: 1, h: 1, carStop: { x: 2.7, y: 9.5 },  pile: { x: 4.5, y: 10.5 }, collect: { x: 5.5, y: 10.5 }, blurb: 'More bowsers, more grey nomads.' },
+  { id: 'choc',     name: 'Iced Choc Fridge',  kind: 'maker', item: 'choc',   cost: 2400,  x: 10, y: 9,  w: 1, h: 1, interact: { x: 9.5, y: 9.5 },  blurb: 'Iced choc. Liquid air-con.' },
+  { id: 'office',   name: 'Back Office',       kind: 'office',   cost: 3400,  x: 7,  y: 13, w: 2, h: 1, interact: { x: 8, y: 14.5 }, blurb: 'Station and price upgrades for this roadhouse. Crew skills carry over.' },
+  { id: 'trev',     name: 'Hire Tanker Trev',  kind: 'hire', staff: 'trev',   cost: 4200,  x: 10, y: 15, w: 1, h: 1, blurb: 'Trev hauls the fuel drums for you.' },
+  { id: 'val',      name: 'Bring Aunty Val',   kind: 'hire', staff: 'val',    cost: 3200,  x: 8,  y: 15, w: 1, h: 1, blurb: 'Val came on the bus. She runs the till.' },
+  { id: 'mechanic', name: 'Mechanic Bay',      kind: 'mechanic', cost: 6500,  x: 3,  y: 1,  w: 2, h: 1, carStop: { x: 2.7, y: 2.8 }, pile: { x: 4.4, y: 2.55 }, collect: { x: 4.5, y: 3.5 }, blurb: 'Roos come out at night. Fix the dents, name your price.' },
+  { id: 'gav',      name: 'Bring Gav',         kind: 'hire', staff: 'gav',    cost: 5500,  x: 7,  y: 15, w: 1, h: 1, blurb: 'Gav restocks the counter for you.' },
+  { id: 'dimsim',   name: 'Dim Sim Steamer',   kind: 'maker', item: 'dimsim', cost: 9000,  x: 10, y: 12, w: 1, h: 1, interact: { x: 9.5, y: 12.5 }, blurb: 'Steamed or fried? Yes.' },
+  { id: 'mick',     name: 'Hire Mick',         kind: 'hire', staff: 'mick',   cost: 11000,  x: 10, y: 14, w: 1, h: 1, blurb: 'Mick fixes roo damage while you sleep.' },
+  { id: 'pump3',    name: 'Diesel Pump 3',     kind: 'pump',     cost: 14000,  x: 4,  y: 13, w: 1, h: 1, carStop: { x: 2.7, y: 13.5 }, pile: { x: 4.5, y: 14.5 }, collect: { x: 5.5, y: 14.5 }, blurb: 'Three bowsers. Pete is weeping.' },
+  { id: 'shazza',   name: 'Bring Shazza',      kind: 'hire', staff: 'shazza', cost: 16000,  x: 9,  y: 15, w: 1, h: 1, blurb: 'Shazza collects the pump and workshop cash.' },
+  { id: 'lookout',  name: 'Whale Lookout',     kind: 'lookout',  cost: 18000, x: 8,  y: 19, w: 2, h: 1, blurb: 'Tourists stop to see the whales, then buy a pie. +40% customers and cars.' },
+  { id: 'bigthong', name: 'The Big Thong',     kind: 'bigthong', cost: 27000, x: 3,  y: 20, w: 2, h: 1, blurb: 'A Big Thing. Visible from space. +25% everything.' },
+  NETWORK_STATION(5.3, 20.3),
+];
+SERVOS.nullarbor = { id: 'nullarbor', upgradeScale: 3, name: 'Long Straight Roadhouse', place: 'Eyre Highway, the Nullarbor', signWord: 'ROADHOUSE', defaultSign: 'LONG STRAIGHT ROADHOUSE', bigThing: 'bigthong', bigThingName: 'The Big Thong',
+  items: ['pie', 'choc', 'dimsim'], events: ['rush', 'seagulls', 'pricewar'], tank: true, rival: true, startCash: 60, lines: NULLARBOR_LINES,
+  map: NULLARBOR_MAP, stations: NULLARBOR_STATIONS, geo: { lon: 128.6, lat: -31.6 }, km: 1700,
+  econ: { pump: { interval: 5.5, fillTime: 2.5, pay: 22 }, carwash: ECON.carwash, customer: { interval: 4.0, perItem: 0.35, patience: 45, serveTime: 0.9, queueMax: 6 },
+    makers: { pie: { rate: 2.6, cap: 8, price: 11, name: 'Pie', short: 'pie' }, choc: { rate: 3.0, cap: 6, price: 15, name: 'Iced Choc', short: 'choc' }, dimsim: { rate: 3.2, cap: 8, price: 19, name: 'Dim Sim', short: 'dimsim' } },
+    tank: { cap: 60, start: 36, perDrum: 4 }, tanker: { interval: 45, drums: 10, trayCap: 20, unload: 3.0 },
+    mechanic: { dayInterval: 34, nightInterval: 8, repairTime: 4.0, wait: 28, pay: 110 } } };
+SERVOS.outback.econ.tank = null; SERVOS.outback.econ.tanker = null; SERVOS.outback.econ.mechanic = null;
+const SERVO_ORDER = ['outback', 'nullarbor'];
+const SERVO_TEASERS = [{ id: 'ufo', name: 'UFO Roadhouse', place: 'Stuart Highway, NT', geo: { lon: 134.2, lat: -20.4 } }, { id: 'dugout', name: 'Opal Dugout Servo', place: 'Stuart Highway, SA', geo: { lon: 134.7, lat: -29.0 } }];
+let SERVO, MAP, STATIONS, STATION_BY_ID, ORDER, ITEMS; // bindings for the servo currently being played (swapped by useServo)
+function useServo(id) { SERVO = SERVOS[id] || SERVOS.outback; MAP = SERVO.map; STATIONS = SERVO.stations; STATION_BY_ID = Object.fromEntries(STATIONS.map(st => [st.id, st])); ORDER = STATIONS.filter(st => !st.meta).map(st => st.id); ITEMS = SERVO.items; Object.assign(ECON, SERVO.econ); return SERVO; }
+useServo('outback');
 
 class Grid {
   constructor() { this.W = MAP.W; this.H = MAP.H; this.blocked = new Uint8Array(this.W * this.H); }
@@ -483,7 +580,6 @@ class Grid {
 }
 
 /* ---------------- 7. SIM (pure simulation: no DOM, fixed timestep) ---------------- */
-const ITEMS = ['pie', 'coffee', 'roll'];
 const CUST_COLORS = ['#e4572e', '#3d9be9', '#8bc34a', '#f3c623', '#9b5de5', '#f15bb5', '#00bbf9', '#ff7b54', '#6c757d', '#2ec4b6'];
 const CAR_COLORS = ['#f2f2f2', '#c0392b', '#2c3e50', '#f39c12', '#16a085', '#7f8c8d', '#8e44ad', '#d35400', '#ecf0f1', '#27ae60'];
 class Sim {
@@ -495,34 +591,44 @@ class Sim {
     this.input = { x: 0, y: 0 };
     this.grid = new Grid();
     this.spicy = true;
+    this.world = { active: SERVO.id, others: {}, unlocked: { outback: true }, bigThings: {}, thongs: {} };
+    this.firstPlay = this.now();
     this.reset();
   }
   reset() {
-    this.time = 0; this.playTime = 0; this.cash = ECON.startCash; this.totalEarned = 0;
+    this.time = 0; this.playTime = 0; this.cash = SERVO.startCash || ECON.startCash; this.totalEarned = 0;
     this.built = {}; this.paid = {}; this.upgrades = { walk: 0, carry: 0, station: 0, price: 0, staff: 0 };
-    this.tray = { pie: 0, coffee: 0, roll: 0 }; this.cookT = { pie: 0, coffee: 0, roll: 0 };
-    this.shelf = { pie: 0, coffee: 0, roll: 0 }; this.piles = {};
+    this.tray = {}; this.cookT = {}; this.shelf = {}; for (const it of ITEMS) { this.tray[it] = 0; this.cookT[it] = 0; this.shelf[it] = 0; } this.piles = {};
+    this.fuel = ECON.tank ? ECON.tank.start : 0; this.depotTray = 0; this.share = 0.5; this.pwHold = 0; this.floorThongs = []; this.netAccum = 0; this.netT = ECON.netInterval;
     this.player = { x: MAP.playerStart.x, y: MAP.playerStart.y, carry: [], face: 1, moving: false, pickT: 0, anim: 0, atCounter: false };
     this.customers = []; this.cars = []; this.seagulls = []; this.staff = {};
     this.custT = 4; this.carT = {}; this.passT = 2; this.chaosT = ECON.chaosFirst; this.event = null; this.eventT = 0;
     this.serveT = 0; this.bounce = {}; this.inOffice = false; this.padTick = 0;
     this.stats = { unlocks: 0, served: 0, lost: 0, shooed: 0, stolen: 0, cars: 0, events: 0, upgrades: 0, ibisShooed: 0, eaten: 0, roadTrains: 0, bestHustle: 0 };
     this.hustle = 0; this.hustleHold = 0; this.hustleLevel = 0; this.ibises = [];
-    this.flags = {}; this.firstPlay = this.now(); this.lastSeen = this.now();
+    this.stats.dry = 0; this.stats.repaired = 0; this.stats.unfixed = 0; this.stats.thongs = 0;
+    this.flags = {}; this.lastSeen = this.now();
     this.grid.rebuild(this.built);
   }
   /* --- derived numbers --- */
   get walkSpeed() { return ECON.walkBase * (1 + 0.12 * this.upgrades.walk); }
   get carryCap() { return ECON.carryBase + 2 * this.upgrades.carry; }
   get stationMult() { return 1 + 0.15 * this.upgrades.station; }
-  get priceMult() { return (1 + 0.2 * this.upgrades.price) * (this.built.bigpie ? ECON.bigPieMult : 1); }
+  get thongCount() { return Object.keys(this.world.thongs).length; }
+  get priceMult() { return (1 + 0.2 * this.upgrades.price) * (this.built[SERVO.bigThing] ? ECON.bigPieMult : 1) * (1 + ECON.thongBonus * this.thongCount); }
   get staffMult() { return 1 + 0.2 * this.upgrades.staff; }
-  get baseTraffic() { return (this.built.billboard ? ECON.billboardMult : 1) * (this.built.till2 ? ECON.till2Mult : 1) * (this.built.bigpie ? ECON.bigPieMult : 1); }
-  get trafficMult() { return this.baseTraffic * (this.event === 'rush' ? ECON.rushMult : 1); }
+  get baseTraffic() { return (this.built.lookout ? 1.4 : 1) * (this.built.billboard ? ECON.billboardMult : 1) * (this.built.till2 ? ECON.till2Mult : 1) * (this.built[SERVO.bigThing] ? ECON.bigPieMult : 1); }
+  get rivalMult() { return SERVO.rival ? 0.5 + this.share : 1; }
+  get trafficMult() { return this.baseTraffic * this.rivalMult * (this.event === 'rush' ? ECON.rushMult : 1) * (this.event === 'pricewar' ? ECON.priceWarMult : 1); }
   custInterval(n) { return ECON.customer.interval / (1 + ECON.customer.perItem * (n - 1)); }
   get queueMax() { return ECON.customer.queueMax + (this.built.till2 ? 2 : 0); }
   get staffCount() { return Object.keys(this.staff).length; }
   price(item) { return Math.round(ECON.makers[item].price * this.priceMult); }
+  dayState() { const ph = ((this.time / 360 + 0.15) % 1 + 1) % 1; let n = 0; // 6-minute day; shared by the renderer (lighting) and the sim (roos at night)
+    if (ph >= 0.5 && ph < 0.6) n = smooth((ph - 0.5) / 0.1); else if (ph >= 0.6 && ph < 0.85) n = 1; else if (ph >= 0.85 && ph < 0.95) n = 1 - smooth((ph - 0.85) / 0.1);
+    const warm = Math.max(0, 1 - Math.abs(ph - 0.54) / 0.08) + Math.max(0, 1 - Math.abs(ph - 0.9) / 0.07) * 0.7; return { ph, night: n, warm }; }
+  addShare(d) { if (!SERVO.rival) return; this.share = clamp(this.share + d, 0.2, 1); if (this.share >= 1 && !this.flags.peteBust) { this.flags.peteBust = true; this.fx.push({ t: 'peteBust' }); this.track('rival_beaten', { servo: SERVO.id, minutes_since_first_play: this.minutesSinceFirst() }); } }
+  networkRate() { let r = 0; for (const id in this.world.others) if (id !== SERVO.id && this.world.unlocked[id]) r += (this.world.others[id].rate || 0) * ECON.netShare; return r; }
   pumpPay() { return Math.round(ECON.pump.pay * this.priceMult); }
   washPay() { return Math.round(ECON.carwash.pay * this.priceMult); }
   unlockedItems() { return ITEMS.filter(i => this.built[i]); }
@@ -530,7 +636,7 @@ class Sim {
   nextPad() { for (const id of ORDER) if (!this.built[id]) return id; return null; }
   allBuilt() { return ORDER.every(id => this.built[id]); }
   minutesSinceFirst() { return Math.round((this.now() - this.firstPlay) / 60000); }
-  upgradeCost(id) { const u = UPGRADES.find(u => u.id === id); const lv = this.upgrades[id] || 0; return lv >= u.max ? Infinity : Math.round(u.base * Math.pow(u.mult, lv)); }
+  upgradeCost(id) { const u = UPGRADES.find(u => u.id === id); const lv = this.upgrades[id] || 0; return lv >= u.max ? Infinity : Math.round(u.base * Math.pow(u.mult, lv) * (u.crew ? 1 : (SERVO.upgradeScale || 1))); }
   canBuyUpgrade(id) { return this.cash >= this.upgradeCost(id); }
   buyUpgrade(id) {
     const cost = this.upgradeCost(id); if (!(this.cash >= cost)) return false;
@@ -544,8 +650,10 @@ class Sim {
   addHustle(k = 1) { this.hustle = Math.min(ECON.hustleMax, this.hustle + ECON.hustleGain * k); this.hustleHold = ECON.hustleHold;
     const lvl = Math.floor(this.hustle * 10 + 1e-6); if (lvl > this.hustleLevel) { this.hustleLevel = lvl; this.fx.push({ t: 'hustle', level: lvl, mult: this.hustleMult }); } this.stats.bestHustle = Math.max(this.stats.bestHustle || 0, lvl); }
   updateHustle(dt) { if (this.hustleHold > 0) { this.hustleHold -= dt; return; } if (this.hustle > 0) { this.hustle = Math.max(0, this.hustle - ECON.hustleDecay * dt); const lvl = Math.floor(this.hustle * 10 + 1e-6); if (lvl < this.hustleLevel) this.hustleLevel = lvl; } }
-  carLen(kind) { return kind === 'roadtrain' ? 2.9 : kind === 'truck' ? 2.1 : 1.5; }
-  line() { const pool = this.spicy ? LINES : LINES.filter(l => !l[1]); return this.rng.pick(pool)[0]; }
+  carLen(kind) { return kind === 'roadtrain' || kind === 'tanker' ? 2.9 : kind === 'caravan' ? 2.5 : kind === 'truck' ? 2.1 : 1.5; }
+  line() { const all = SERVO.lines && this.rng.next() < 0.55 ? SERVO.lines : LINES; const pool = this.spicy ? all : all.filter(l => !l[1]); return this.rng.pick(pool)[0]; }
+  collectThong(x, y) { const w = THONGS.map(t => t.r === 1 ? 6 : t.r === 2 ? 2.4 : 0.6); let k = this.rng.next() * w.reduce((a, b) => a + b, 0), pick = THONGS[0]; for (let i = 0; i < THONGS.length; i++) { k -= w[i]; if (k <= 0) { pick = THONGS[i]; break; } }
+    const isNew = !this.world.thongs[pick.id]; this.world.thongs[pick.id] = (this.world.thongs[pick.id] || 0) + 1; this.stats.thongs++; this.addHustle(2); this.fx.push({ t: 'thong', id: pick.id, isNew, x, y }); this.track('thong_found', { rarity: pick.r, is_new: isNew, collected: this.thongCount }); }
   waitingFor(item) { let n = 0; for (const c of this.customers) if (c.want === item && (c.state === 'queue' || c.state === 'enter' || c.state === 'shift')) n++; return n; }
   queueCount() { let n = 0; for (const c of this.customers) if (c.state !== 'leave') n++; return n; }
   /* --- geometry --- */
@@ -593,6 +701,8 @@ class Sim {
     this.time += dt; this.playTime += dt;
     this.updatePlayer(dt); this.updatePads(dt); this.updateMakers(dt); this.updateCars(dt);
     this.updateCustomers(dt); this.updateStaff(dt); this.updateChaos(dt); this.updateHustle(dt);
+    const nr = this.networkRate(); if (nr > 0) { this.netAccum += nr * dt; this.netT -= dt; if (this.netT <= 0) { this.netT = ECON.netInterval; const amt = Math.floor(this.netAccum); if (amt >= 1) { this.netAccum -= amt; this.piles.network = (this.piles.network || 0) + amt; this.fx.push({ t: 'delivery', amount: amt }); } } }
+    for (const th of this.floorThongs) th.t += dt;
     for (const k in this.bounce) { this.bounce[k] -= dt * 4; if (this.bounce[k] <= 0) delete this.bounce[k]; }
   }
   updatePlayer(dt) {
@@ -604,6 +714,9 @@ class Sim {
     for (const id in this.piles) { const amt = this.piles[id]; if (amt < 1) continue; const pp = STATION_BY_ID[id].pile; if (dist(p.x, p.y, pp.x, pp.y) < 1.15) { this.piles[id] = 0; const base = Math.floor(amt), bonus = Math.floor(base * this.hustle); this.addCash(base + bonus, pp.x, pp.y, id); if (bonus > 0) this.fx.push({ t: 'bonus', x: pp.x, y: pp.y, amount: bonus }); this.addHustle(2); } }
     for (const item of this.unlockedItems()) { const st = STATION_BY_ID[item];
       if (this.tray[item] > 0 && p.carry.length < this.carryCap && p.pickT <= 0 && this.nearRect(p, st, 0.95)) { this.tray[item]--; p.carry.push(item); p.pickT = 0.1; this.fx.push({ t: 'pick', x: st.x + 0.5, y: st.y + 0.5, item, n: p.carry.length }); this.bump(item); this.addHustle(0.5); } }
+    if (this.built.depot && this.depotTray > 0 && p.carry.length < this.carryCap && p.pickT <= 0 && this.nearRect(p, STATION_BY_ID.depot, 1.0)) { this.depotTray--; p.carry.push('fuel'); p.pickT = 0.1; this.fx.push({ t: 'pick', x: 4, y: 18, item: 'fuel', n: p.carry.length }); this.bump('depot'); this.addHustle(0.5); }
+    if (MAP.tank && p.pickT <= 0 && p.carry.includes('fuel') && this.fuel + ECON.tank.perDrum <= ECON.tank.cap && this.nearRect(p, MAP.tank, 1.0)) { p.carry.splice(p.carry.indexOf('fuel'), 1); this.fuel += ECON.tank.perDrum; p.pickT = 0.08; this.fx.push({ t: 'drop', x: MAP.tank.x + 0.5, y: MAP.tank.y + 0.5, item: 'fuel' }); this.bump('tank'); this.addHustle(0.5); }
+    for (let i = this.floorThongs.length - 1; i >= 0; i--) { const th = this.floorThongs[i]; if (dist(p.x, p.y, th.x, th.y) < 0.85) { this.floorThongs.splice(i, 1); this.collectThong(th.x, th.y); } }
     p.atCounter = false;
     if (this.built.counter) { const st = STATION_BY_ID.counter; const near = this.nearRect(p, st, 1.05) || (this.built.till2 && this.nearRect(p, STATION_BY_ID.till2, 1.05));
       p.atCounter = !!near;
@@ -630,11 +743,12 @@ class Sim {
     if (st.kind === 'counter') this.piles.counter = this.piles.counter || 0;
     if (st.kind === 'hire') { this.hire(st.staff); }
     this.fx.push({ t: 'build', id, x: st.x + st.w / 2, y: st.y + st.h / 2 });
+    if (id === SERVO.bigThing) { this.world.bigThings[SERVO.id] = true; this.fx.push({ t: 'bigthing', id, servo: SERVO.id }); }
     this.track('unlock_bought', { station: id, index: ORDER.indexOf(id) + 1, cost: st.cost, minutes_since_first_play: this.minutesSinceFirst(), play_minutes: Math.round(this.playTime / 60) });
-    if (this.allBuilt() && !this.flags.mapComplete) { this.flags.mapComplete = true; this.fx.push({ t: 'complete' }); this.track('map_complete', { minutes_since_first_play: this.minutesSinceFirst(), play_minutes: Math.round(this.playTime / 60), total_earned: Math.floor(this.totalEarned) }); }
+    if (this.allBuilt() && !this.flags.mapComplete) { this.flags.mapComplete = true; const nx = SERVO_ORDER[SERVO_ORDER.indexOf(SERVO.id) + 1]; if (nx) this.world.unlocked[nx] = true; this.fx.push({ t: 'complete' }); this.track('map_complete', { minutes_since_first_play: this.minutesSinceFirst(), play_minutes: Math.round(this.playTime / 60), total_earned: Math.floor(this.totalEarned) }); }
   }
   hire(who) {
-    const spot = who === 'gav' ? MAP.gavIdle : who === 'val' ? MAP.valSpot : MAP.shazzaIdle; const st = STATIONS.find(s => s.staff === who);
+    const spot = who === 'gav' ? MAP.gavIdle : who === 'val' ? MAP.valSpot : who === 'mick' ? MAP.mickSpot : who === 'trev' ? MAP.trevIdle : MAP.shazzaIdle; const st = STATIONS.find(s => s.staff === who);
     this.staff[who] = { id: who, x: st.x + 0.5, y: st.y + 0.5, path: [], state: 'idle', carry: [], item: null, t: 0, anim: 0, face: 1, target: null, bubble: STAFF_INFO[who].hireLine, bubbleT: 4, home: spot };
     this.fx.push({ t: 'hire', staff: who }); this.track('staff_hired', { staff: who, minutes_since_first_play: this.minutesSinceFirst() });
   }
@@ -644,24 +758,41 @@ class Sim {
   }
   carBusy(id) { return this.cars.some(c => c.station === id && c.state !== 'leave'); }
   spawnCar(id, forceUte) {
-    const st = STATION_BY_ID[id]; const stop = st.carStop; let kind = forceUte ? 'ute' : this.rng.pick(['ute', 'ute', 'sedan', 'sedan', 'van', 'wagon']);
+    const st = STATION_BY_ID[id]; const stop = st.carStop; let kind = forceUte ? (SERVO.id === 'nullarbor' ? 'caravan' : 'ute') : this.rng.pick(['ute', 'ute', 'sedan', 'sedan', 'van', 'wagon']); if (st.kind === 'depot') kind = 'tanker';
     if (st.kind === 'pump' && this.built.pump2 && this.rng.next() < ECON.roadTrainChance) { kind = 'roadtrain'; this.stats.roadTrains = (this.stats.roadTrains || 0) + 1; this.fx.push({ t: 'roadtrain', id }); }
-    const pts = id === 'carwash' ? [{ x: MAP.laneX, y: -1.5 }, { x: MAP.laneX, y: 15 }, { x: 2.6, y: 16.4 }, { x: stop.x, y: stop.y }] : [{ x: MAP.laneX, y: -1.5 }, { x: MAP.laneX, y: stop.y - 2.3 }, { x: stop.x, y: stop.y }];
-    this.cars.push({ station: id, state: 'arrive', path: pts.slice(1), x: pts[0].x, y: pts[0].y, kind, color: this.rng.pick(CAR_COLORS), t: 0, anim: 0, face: 1, bubble: kind === 'roadtrain' ? 'Road train comin\' through! Fill all three tanks.' : this.rng.next() < 0.3 ? this.rng.pick(CAR_LINES) : null, bubbleT: 4, pass: false });
+    const pts = st.kind === 'mechanic' ? [{ x: MAP.laneX, y: -1.5 }, { x: MAP.laneX, y: 0.4 }, { x: stop.x, y: stop.y }] : (id === 'carwash' || st.kind === 'depot') ? [{ x: MAP.laneX, y: -1.5 }, { x: MAP.laneX, y: 15 }, { x: 2.6, y: 16.4 }, { x: stop.x, y: stop.y }] : [{ x: MAP.laneX, y: -1.5 }, { x: MAP.laneX, y: stop.y - 2.3 }, { x: stop.x, y: stop.y }];
+    this.cars.push({ station: id, state: 'arrive', path: pts.slice(1), x: pts[0].x, y: pts[0].y, kind, color: this.rng.pick(CAR_COLORS), t: 0, anim: 0, face: 1, bubble: kind === 'roadtrain' ? 'Road train comin\' through! Fill all three tanks.' : st.kind === 'mechanic' ? this.rng.pick(['Hit a roo. She\'s steaming.', 'Roo came outta nowhere!', 'Bonnet\'s munted, mate.']) : this.rng.next() < 0.3 ? this.rng.pick(CAR_LINES) : null, bubbleT: 4, pass: false, damaged: st.kind === 'mechanic' });
     this.stats.cars++;
   }
   updateCars(dt) {
-    for (const id of ['pump1', 'pump2', 'pump3', 'carwash']) { if (!this.built[id]) continue; const cfg = id === 'carwash' ? ECON.carwash : ECON.pump;
-      this.carT[id] = (this.carT[id] === undefined ? cfg.interval * 0.4 : this.carT[id]) - dt * this.trafficMult * Math.sqrt(this.stationMult);
-      if (this.carT[id] <= 0) { if (!this.carBusy(id) && this.cars.length < 14) { this.carT[id] = cfg.interval * this.rng.range(0.75, 1.25); this.spawnCar(id, this.event === 'rush'); } else this.carT[id] = 0; } }
-    this.passT -= dt; if (this.passT <= 0) { this.passT = this.rng.range(3, 7); if (this.cars.length < 16) this.cars.push({ station: null, state: 'pass', path: [{ x: MAP.passLaneX, y: -2 }], x: MAP.passLaneX, y: MAP.H + 2, kind: this.rng.pick(['sedan', 'ute', 'truck']), color: this.rng.pick(CAR_COLORS), t: 0, anim: 0, face: -1, bubble: null, bubbleT: 0, pass: true }); }
+    const night = this.dayState().night;
+    for (const id of ['pump1', 'pump2', 'pump3', 'carwash', 'depot', 'mechanic']) { if (!this.built[id]) continue; const kind = STATION_BY_ID[id].kind;
+      const interval = kind === 'depot' ? ECON.tanker.interval : kind === 'mechanic' ? lerp(ECON.mechanic.dayInterval, ECON.mechanic.nightInterval, night) : id === 'carwash' ? ECON.carwash.interval : ECON.pump.interval;
+      const rate = kind === 'depot' ? 1 : this.trafficMult * Math.sqrt(this.stationMult);
+      this.carT[id] = (this.carT[id] === undefined ? interval * (kind === 'depot' ? 0.15 : 0.4) : this.carT[id]) - dt * rate;
+      if (this.carT[id] <= 0) { if (!this.carBusy(id) && this.cars.length < 15) { this.carT[id] = interval * this.rng.range(0.75, 1.25); this.spawnCar(id, this.event === 'rush' && kind === 'pump'); } else this.carT[id] = 0; } }
+    this.passT -= dt; if (this.passT <= 0) { this.passT = this.rng.range(3, 7); if (this.cars.length < 16) this.cars.push({ station: null, state: 'pass', path: [{ x: MAP.passLaneX, y: -4 }], x: MAP.passLaneX, y: MAP.H + 4, kind: this.rng.pick(SERVO.id === 'nullarbor' ? ['sedan', 'caravan', 'roadtrain', 'ute', 'caravan'] : ['sedan', 'ute', 'truck']), color: this.rng.pick(CAR_COLORS), t: 0, anim: 0, face: -1, bubble: null, bubbleT: 0, pass: true }); }
     for (let i = this.cars.length - 1; i >= 0; i--) { const c = this.cars[i]; c.bubbleT -= dt; if (c.bubbleT <= 0) c.bubble = null;
       if (c.state === 'pass') { if (this.moveAlong(c, 6, dt)) this.cars.splice(i, 1); continue; }
       const st = STATION_BY_ID[c.station]; const cfg = c.station === 'carwash' ? ECON.carwash : ECON.pump;
+      if (c.state === 'repair') { c.wait -= dt; const mick = this.staff.mick && dist(this.staff.mick.x, this.staff.mick.y, MAP.mickSpot.x, MAP.mickSpot.y) < 0.4; const me = dist(this.player.x, this.player.y, c.x, c.y) < 1.7;
+        if (me || mick) { c.t -= dt * (me ? 1 : 0) + dt * (mick ? this.staffMult * 0.85 : 0); c.fixing = true; this.bounce.mechanic = Math.max(this.bounce.mechanic || 0, 0.25); if (me && !this._repairHustleT) { this._repairHustleT = 0.6; } } else c.fixing = false;
+        if (this._repairHustleT) { this._repairHustleT -= dt; if (this._repairHustleT <= 0) { this._repairHustleT = 0; if (me) this.addHustle(0.6); } }
+        if (c.t <= 0) { const pay = Math.round(ECON.mechanic.pay * this.priceMult); this.piles.mechanic = (this.piles.mechanic || 0) + pay; this.stats.repaired++; this.addShare(ECON.shareRepair); this.fx.push({ t: 'repaired', x: st.pile.x, y: st.pile.y, amount: pay }); this.bump('mechanic'); c.damaged = false; c.bubble = this.rng.pick(FIXED_LINES); c.bubbleT = 2.5;
+          c.state = 'leave'; c.path = [{ x: MAP.laneX, y: c.y + 2.3 }, { x: MAP.laneX, y: MAP.H + 4 }]; }
+        else if (c.wait <= 0) { this.stats.unfixed++; this.addShare(-ECON.shareDry); this.fx.push({ t: 'unfixed', x: c.x, y: c.y }); c.bubble = "Forget it, I'll limp to Pete's."; c.bubbleT = 3; c.state = 'leave'; c.path = [{ x: MAP.laneX, y: c.y + 2.3 }, { x: MAP.laneX, y: MAP.H + 4 }]; }
+        continue; }
       if (c.state === 'arrive') { let blocked = false; if (c.x < 2) for (const o of this.cars) { if (o !== c && o.state === 'arrive' && o.x < 2.2 && o.y > c.y && o.y - c.y < (this.carLen(o.kind) + this.carLen(c.kind)) / 2 + 0.4) { blocked = true; break; } }
-        if (!blocked && this.moveAlong(c, 5, dt)) { c.state = 'fill'; c.t = (c.station === 'carwash' ? cfg.washTime : cfg.fillTime) * (c.kind === 'roadtrain' ? ECON.roadTrainFill : 1) / this.stationMult; c.total = c.t; } }
+        if (!blocked && this.moveAlong(c, 5, dt)) {
+          if (st.kind === 'mechanic') { c.state = 'repair'; c.t = ECON.mechanic.repairTime; c.total = c.t; c.wait = ECON.mechanic.wait; }
+          else if (st.kind === 'depot') { c.state = 'fill'; c.t = ECON.tanker.unload; c.total = c.t; }
+          else if (st.kind === 'pump' && ECON.tank) { const need = c.kind === 'roadtrain' ? 3 : 1; // every car drinks from the shared tank
+            if (this.fuel >= need) { this.fuel -= need; c.state = 'fill'; c.t = cfg.fillTime * (c.kind === 'roadtrain' ? ECON.roadTrainFill : 1) / this.stationMult; c.total = c.t; }
+            else { this.stats.dry++; this.addShare(-ECON.shareDry); this.fx.push({ t: 'dry', x: c.x, y: c.y }); c.bubble = this.rng.pick(DRY_LINES); c.bubbleT = 3; c.state = 'leave'; c.path = [{ x: MAP.laneX, y: c.y + 2.3 }, { x: MAP.laneX, y: MAP.H + 4 }]; } }
+          else { c.state = 'fill'; c.t = (c.station === 'carwash' ? cfg.washTime : cfg.fillTime) * (c.kind === 'roadtrain' ? ECON.roadTrainFill : 1) / this.stationMult; c.total = c.t; } } }
       else if (c.state === 'fill') { c.t -= dt; this.bounce[c.station] = Math.max(this.bounce[c.station] || 0, 0.3);
-        if (c.t <= 0) { const pay = c.station === 'carwash' ? this.washPay() : this.pumpPay() * (c.kind === 'roadtrain' ? ECON.roadTrainPay : 1); this.piles[c.station] = (this.piles[c.station] || 0) + pay; this.fx.push({ t: 'paid', x: st.pile.x, y: st.pile.y, amount: pay, station: c.station }); this.bump(c.station);
+        if (c.t <= 0 && st.kind === 'depot') { const add = Math.min(ECON.tanker.drums, ECON.tanker.trayCap - this.depotTray); this.depotTray += add; this.fx.push({ t: 'tanker', drums: add }); this.bump('depot'); c.state = 'leave'; c.path = [{ x: 2.6, y: 19.6 }, { x: MAP.laneX, y: 20.8 }, { x: MAP.laneX, y: MAP.H + 4 }]; continue; }
+        if (c.t <= 0) { const pay = c.station === 'carwash' ? this.washPay() : this.pumpPay() * (c.kind === 'roadtrain' ? ECON.roadTrainPay : 1); this.addShare(ECON.shareCar); this.piles[c.station] = (this.piles[c.station] || 0) + pay; this.fx.push({ t: 'paid', x: st.pile.x, y: st.pile.y, amount: pay, station: c.station }); this.bump(c.station);
           c.state = 'leave'; c.path = c.station === 'carwash' ? [{ x: 2.6, y: 19.6 }, { x: MAP.laneX, y: 20.8 }, { x: MAP.laneX, y: MAP.H + 2 }] : [{ x: MAP.laneX, y: c.y + 2.3 }, { x: MAP.laneX, y: MAP.H + 4 }]; } }
       else if (c.state === 'leave') { if (this.moveAlong(c, 5.5, dt)) this.cars.splice(i, 1); } }
   }
@@ -682,13 +813,13 @@ class Sim {
     for (let i = this.customers.length - 1; i >= 0; i--) { const c = this.customers[i]; c.bubbleT -= dt; if (c.bubbleT <= 0) c.bubble = null;
       if (c.state === 'enter' || c.state === 'shift') { if (this.moveAlong(c, 2.6, dt)) c.state = 'queue'; }
       else if (c.state === 'queue') { c.patience -= dt; if (c.slot === 0) serving = c;
-        if (c.patience <= 0) { this.stats.lost++; c.state = 'leave'; c.bubble = this.rng.pick(SAD_LINES); c.bubbleT = 3; this.pathTo(c, MAP.exit.x, MAP.exit.y); this.fx.push({ t: 'lost', x: c.x, y: c.y }); this.compactQueue(); } }
+        if (c.patience <= 0) { this.stats.lost++; this.addShare(-ECON.shareLost); c.state = 'leave'; c.bubble = this.rng.pick(SAD_LINES); c.bubbleT = 3; this.pathTo(c, MAP.exit.x, MAP.exit.y); this.fx.push({ t: 'lost', x: c.x, y: c.y }); this.compactQueue(); } }
       else if (c.state === 'leave') { if (this.moveAlong(c, 3.2, dt)) this.customers.splice(i, 1); } }
     if (serving && this.shelf[serving.want] > 0 && (this.staff.val || this.player.atCounter)) {
       const speed = (this.staff.val ? this.staffMult : 1) * (this.built.till2 ? 1.5 : 1); this.serveT += dt * speed;
       if (this.serveT >= ECON.customer.serveTime) { this.serveT = 0; this.shelf[serving.want]--; const pay = this.price(serving.want); this.piles.counter = (this.piles.counter || 0) + pay; this.stats.served++;
         const st = STATION_BY_ID.counter; this.fx.push({ t: 'serve', x: st.pile.x, y: st.pile.y, amount: pay, item: serving.want }); this.bump('counter'); if (this.staff.val) this.staff.val.anim += 3;
-        if (this.player.atCounter) this.addHustle(1); serving.state = 'leave'; serving.happy = true; if (this.rng.next() < 0.5) { serving.bubble = this.rng.pick(HAPPY_LINES); serving.bubbleT = 2.5; } this.pathTo(serving, MAP.exit.x, MAP.exit.y); this.compactQueue(); }
+        if (this.player.atCounter) this.addHustle(1); this.addShare(ECON.shareServe); if (this.rng.next() < ECON.thongChance && this.floorThongs.length < 6) { this.floorThongs.push({ x: clamp(serving.x + this.rng.range(-0.4, 0.4), 7.3, 9.8), y: serving.y + 0.5, t: 0 }); this.fx.push({ t: 'thongDrop', x: serving.x, y: serving.y }); } serving.state = 'leave'; serving.happy = true; if (this.rng.next() < 0.5) { serving.bubble = this.rng.pick(HAPPY_LINES); serving.bubbleT = 2.5; } this.pathTo(serving, MAP.exit.x, MAP.exit.y); this.compactQueue(); }
     } else this.serveT = Math.max(0, this.serveT - dt);
   }
   compactQueue() { const q = this.customers.filter(c => c.state !== 'leave').sort((a, b) => a.slot - b.slot);
@@ -696,7 +827,8 @@ class Sim {
   updateStaff(dt) {
     const sp = ECON.staffSpeedBase * this.staffMult;
     for (const who in this.staff) { const s = this.staff[who]; s.bubbleT -= dt; if (s.bubbleT <= 0) s.bubble = null; s.t -= dt;
-      if (who === 'val') { if (dist(s.x, s.y, MAP.valSpot.x, MAP.valSpot.y) > 0.1) { if (!s.path.length) this.pathTo(s, MAP.valSpot.x, MAP.valSpot.y); this.moveAlong(s, sp, dt); } continue; }
+      if (who === 'val' || who === 'mick') { const spot = who === 'val' ? MAP.valSpot : MAP.mickSpot; if (dist(s.x, s.y, spot.x, spot.y) > 0.1) { if (!s.path.length) this.pathTo(s, spot.x, spot.y); this.moveAlong(s, sp, dt); } continue; }
+      if (who === 'trev') { this.updateTrev(s, sp, dt); continue; }
       if (who === 'gav') this.updateGav(s, sp, dt); else this.updateShazza(s, sp, dt); }
   }
   updateGav(s, sp, dt) {
@@ -712,9 +844,20 @@ class Sim {
     else if (s.state === 'drop') { if (s.t <= 0) { const i = s.carry.findIndex(it => this.shelf[it] < ECON.shelfCap); if (i >= 0) { const it = s.carry.splice(i, 1)[0]; this.shelf[it]++; s.t = 0.1 / this.staffMult; this.bump('counter'); this.fx.push({ t: 'drop', x: 8.5, y: 4.5, item: it, staff: true }); } else s.t = 0.5; }
       if (!s.carry.length) { s.state = 'idle'; s.t = 0; } }
   }
+  updateTrev(s, sp, dt) { const cap = ECON.staffCarry + this.upgrades.carry, tankSpot = { x: MAP.tank.x - 0.5, y: MAP.tank.y + 0.5 }, depotSpot = STATION_BY_ID.depot.interact;
+    const room = () => Math.floor((ECON.tank.cap - this.fuel) / ECON.tank.perDrum) - s.carry.length;
+    if (s.state === 'idle') { if (s.t > 0) { if (dist(s.x, s.y, s.home.x, s.home.y) > 0.2) { if (!s.path.length) this.pathTo(s, s.home.x, s.home.y); this.moveAlong(s, sp, dt); } return; }
+      s.t = 0.5; if (s.carry.length && room() >= 0) { s.state = 'toTank'; this.pathTo(s, tankSpot.x, tankSpot.y); } else if (this.built.depot && this.depotTray > 0 && room() >= 2) { s.state = 'toDepot'; this.pathTo(s, depotSpot.x, depotSpot.y); } }
+    else if (s.state === 'toDepot') { if (this.moveAlong(s, sp, dt)) { s.state = 'pick'; s.t = 0; } }
+    else if (s.state === 'pick') { if (s.t <= 0 && this.depotTray > 0 && s.carry.length < cap && room() > 0) { this.depotTray--; s.carry.push('fuel'); s.t = 0.15 / this.staffMult; this.bump('depot'); }
+      if (this.depotTray <= 0 || s.carry.length >= cap || room() <= 0) { if (s.carry.length) { s.state = 'toTank'; this.pathTo(s, tankSpot.x, tankSpot.y); } else { s.state = 'idle'; s.t = 0.5; } } }
+    else if (s.state === 'toTank') { if (this.moveAlong(s, sp, dt)) { s.state = 'drop'; s.t = 0; } }
+    else if (s.state === 'drop') { if (s.t <= 0 && s.carry.length && this.fuel + ECON.tank.perDrum <= ECON.tank.cap) { s.carry.pop(); this.fuel += ECON.tank.perDrum; s.t = 0.12 / this.staffMult; this.bump('tank'); } else if (s.t <= 0) s.t = 0.5;
+      if (!s.carry.length) { s.state = 'idle'; s.t = 0; } else if (this.fuel + ECON.tank.perDrum > ECON.tank.cap && s.t <= 0) { s.state = 'idle'; s.t = 1; } }
+  }
   updateShazza(s, sp, dt) {
     if (s.state === 'idle') { if (s.t > 0) { if (dist(s.x, s.y, s.home.x, s.home.y) > 0.2) { if (!s.path.length) this.pathTo(s, s.home.x, s.home.y); this.moveAlong(s, sp, dt); } return; }
-      s.t = 0.5; let best = null, ba = 0; for (const id of ['pump1', 'pump2', 'pump3', 'carwash']) { const a = this.piles[id] || 0; if (a > ba) { ba = a; best = id; } }
+      s.t = 0.5; let best = null, ba = 0; for (const id of ['pump1', 'pump2', 'pump3', 'carwash', 'mechanic', 'network']) { const a = this.piles[id] || 0; if (a > ba && STATION_BY_ID[id]) { ba = a; best = id; } }
       if (best) { s.target = best; s.state = 'toPile'; const st = STATION_BY_ID[best]; this.pathTo(s, st.collect.x, st.collect.y); }
     } else if (s.state === 'toPile') { if (this.moveAlong(s, sp, dt)) { const amt = this.piles[s.target] || 0; const pp = STATION_BY_ID[s.target].pile; if (amt > 0) { this.piles[s.target] = 0; this.addCash(Math.floor(amt), pp.x, pp.y, 'shazza'); } s.state = 'idle'; s.t = 0.2; } }
   }
@@ -724,6 +867,10 @@ class Sim {
     if (this.event === 'seagulls') { this.eventT -= dt; if (!this.seagulls.length || this.eventT <= 0) { this.seagulls.length = 0; this.event = null; this.fx.push({ t: 'eventEnd', kind: 'seagulls' }); } }
     if (this.event === 'ibis') { this.eventT -= dt; if (this.eventT <= 0) for (const b of this.ibises) if (b.state !== 'flee') b.state = 'flee'; if (!this.ibises.length) { this.event = null; this.fx.push({ t: 'eventEnd', kind: 'ibis' }); } }
     this.updateIbis(dt);
+    if (this.event === 'pricewar') { this.eventT -= dt; const near = dist(this.player.x, this.player.y, MAP.priceSpot.x, MAP.priceSpot.y) < 1.1;
+      this.pwHold = near ? this.pwHold + dt : Math.max(0, this.pwHold - dt * 0.5);
+      if (this.pwHold >= ECON.priceWarHold) { this.event = null; this.addShare(0.06); this.addHustle(3); this.fx.push({ t: 'eventEnd', kind: 'pricewar', won: true }); }
+      else if (this.eventT <= 0) { this.event = null; this.addShare(-0.05); this.fx.push({ t: 'eventEnd', kind: 'pricewar', won: false }); } }
     const p = this.player; const tray = STATION_BY_ID.pie;
     for (let i = this.seagulls.length - 1; i >= 0; i--) { const g = this.seagulls[i]; g.anim += dt * 14;
       if (g.state === 'in') { const d = dist(g.x, g.y, g.tx, g.ty); const spd = 3.2 * dt; if (d <= spd) { g.x = g.tx; g.y = g.ty; g.state = 'hover'; g.t = ECON.seagullHover; } else { g.x += (g.tx - g.x) / d * spd; g.y += (g.ty - g.y) / d * spd; } }
@@ -744,10 +891,11 @@ class Sim {
       else if (b.state === 'flee') { b.x += 5 * dt; b.y -= 3.5 * dt; b.face = 1; if (b.y < -3 || b.x > MAP.W + 3) this.ibises.splice(i, 1); } }
   }
   startEvent() {
-    const options = ['rush']; if (this.built.pie && this.tray.pie > 0) options.push('seagulls'); if (this.ibisTargets().length) options.push('ibis');
+    const ev = SERVO.events; const options = ['rush']; if (ev.includes('seagulls') && this.built.pie && this.tray.pie > 0) options.push('seagulls'); if (ev.includes('ibis') && this.ibisTargets().length) options.push('ibis'); if (ev.includes('pricewar')) options.push('pricewar');
     const kind = this.rng.pick(options);
     this.event = kind; this.stats.events++; this.fx.push({ t: 'event', kind }); this.track('chaos_event_seen', { event: kind, minutes_since_first_play: this.minutesSinceFirst() });
     if (kind === 'rush') { this.eventT = ECON.rushDur; for (const id of ['pump1', 'pump2', 'pump3']) if (this.built[id] && !this.carBusy(id)) this.spawnCar(id, true); this.custT = Math.min(this.custT, 0.5); }
+    else if (kind === 'pricewar') { this.eventT = ECON.priceWarDur; this.pwHold = 0; }
     else if (kind === 'ibis') { this.eventT = ECON.ibisDur; const t = this.ibisTargets().sort((a, b) => (this.piles[b] || 0) - (this.piles[a] || 0));
       for (let i = 0; i < ECON.ibis; i++) { const id = t[i % t.length], pp = STATION_BY_ID[id].pile; this.ibises.push({ x: MAP.W + 1 + i, y: pp.y - 4 - i, tx: pp.x + (i % 2 ? 0.5 : -0.45), ty: pp.y + 0.15, target: id, state: 'in', anim: i * 3, face: -1, ate: 0, chew: 0 }); } }
     else { this.eventT = 25; const tray = STATION_BY_ID.pie; const offs = [[-0.7, -0.5], [0.6, -0.8], [-0.1, 0.8]];
@@ -759,6 +907,12 @@ class Sim {
     { let best = null, bd = 1e9; for (const g of this.seagulls) if ((g.state === 'hover' || g.state === 'in') && this.tray.pie > 0) { const d = dist(p.x, p.y, g.tx, g.ty); if (d < bd) { bd = d; best = { x: g.tx, y: g.ty }; } }
       for (const b of this.ibises) if (b.state !== 'flee') { const d = dist(p.x, p.y, b.tx, b.ty); if (d < bd) { bd = d; best = { x: b.tx, y: b.ty }; } }
       if (best) return { type: 'shoo', id: 'pest', x: best.x, y: best.y, label: this.ibises.length ? 'Run off the bin chickens!' : 'Shoo the seagulls!' }; }
+    if (this.event === 'pricewar') return { type: 'shoo', id: 'price', x: MAP.priceSpot.x, y: MAP.priceSpot.y, label: 'Stand on your price board!' };
+    if (!this.staff.mick) { const c = this.cars.find(c => c.state === 'repair'); if (c) return { type: 'repair', id: 'car', x: c.x + 0.9, y: c.y + 0.4, label: 'Fix roo damage ' + fmt(Math.round(ECON.mechanic.pay * this.priceMult)) }; }
+    for (const th of this.floorThongs) return { type: 'pile', id: 'thong', x: th.x, y: th.y, label: 'Grab that thong!' };
+    if (ECON.tank && !this.staff.trev) { const tankRoom = this.fuel + ECON.tank.perDrum <= ECON.tank.cap;
+      if (p.carry.includes('fuel') && tankRoom) return { type: 'carry', id: 'tank', x: MAP.tank.x - 0.5, y: MAP.tank.y + 0.5, label: 'Tip the drums in the tank' };
+      if (this.fuel < ECON.tank.cap * 0.45 && this.depotTray > 0 && p.carry.length < this.carryCap) { const d = STATION_BY_ID.depot.interact; return { type: 'restock', id: 'depot', x: d.x, y: d.y, label: this.fuel < 6 ? 'TANK\'S NEARLY DRY! Grab fuel drums' : 'Grab fuel drums' }; } }
     for (const id of this.visiblePads()) { const st = STATION_BY_ID[id]; if (this.cash >= st.cost - (this.paid[id] || 0) - 0.5) return { type: 'pad', id, x: st.x + st.w / 2, y: st.y + st.h / 2, label: 'Build: ' + st.name }; }
     // carrying stock: head to the counter if there's room for most of it (hysteresis: don't flip-flop as Val frees single slots)
     if (p.carry.length && this.built.counter) { const room = ITEMS.reduce((n, it) => n + Math.max(0, ECON.shelfCap - this.shelf[it]) * (p.carry.includes(it) ? 1 : 0), 0); const wasCarry = this._lastGoal === 'carry';
@@ -786,40 +940,63 @@ class Sim {
   offlineRate() {
     let r = 0; const traffic = this.baseTraffic, carRate = traffic * Math.sqrt(this.stationMult);
     // a pump handles one car at a time: it cannot cycle faster than drive-in + fill + drive-out
-    for (const id of ['pump1', 'pump2', 'pump3']) if (this.built[id]) { const cycle = (1.5 + STATION_BY_ID[id].carStop.y) / 5 + ECON.pump.fillTime / this.stationMult + 0.4; const rt = this.built.pump2 ? ECON.roadTrainChance : 0; r += this.pumpPay() * (1 + rt * (ECON.roadTrainPay - 1)) / Math.max(ECON.pump.interval / carRate, cycle * (1 + rt * (ECON.roadTrainFill - 1) * 0.5)); }
+    const fuelOk = !ECON.tank || this.staff.trev ? 1 : 0.3; // without Trev the drums sit at the depot
+    for (const id of ['pump1', 'pump2', 'pump3']) if (this.built[id]) { const cycle = (1.5 + STATION_BY_ID[id].carStop.y) / 5 + ECON.pump.fillTime / this.stationMult + 0.4; const rt = this.built.pump2 ? ECON.roadTrainChance : 0; r += fuelOk * this.pumpPay() * (1 + rt * (ECON.roadTrainPay - 1)) / Math.max(ECON.pump.interval / carRate, cycle * (1 + rt * (ECON.roadTrainFill - 1) * 0.5)); }
+    if (this.built.mechanic && this.staff.mick) { const avgInt = 1 / (0.65 / ECON.mechanic.dayInterval + 0.35 / ECON.mechanic.nightInterval); r += ECON.mechanic.pay * this.priceMult / Math.max(avgInt / carRate, ECON.mechanic.repairTime / (this.staffMult * 0.85) + 2.5); }
     if (this.built.carwash) { const cycle = (1.5 + 16.5) / 5 + 1 + ECON.carwash.washTime / this.stationMult + 0.4; r += this.washPay() / Math.max(ECON.carwash.interval / carRate, cycle); }
     if (this.built.counter && this.staff.val && this.staff.gav) { const items = this.unlockedItems();
       if (items.length) { let prod = 0, sum = 0; for (const it of items) { prod += this.stationMult / ECON.makers[it].rate; sum += this.price(it); }
         const demand = traffic / this.custInterval(items.length); const serveCap = 1 / (0.45 + ECON.customer.serveTime / (this.staffMult * (this.built.till2 ? 1.5 : 1))); r += Math.min(prod, demand, serveCap) * (sum / items.length); } }
     return r * (ECON.offlineBase + ECON.offlinePerStaff * this.staffCount);
   }
-  offlineEarnings(awaySec) { const t = clamp(awaySec || 0, 0, ECON.offlineCapSec); return { seconds: t, cash: Math.floor(this.offlineRate() * t), capped: awaySec > ECON.offlineCapSec, rate: this.offlineRate() }; }
+  offlineEarnings(awaySec) { const t = clamp(awaySec || 0, 0, ECON.offlineCapSec); const own = Math.floor(this.offlineRate() * t), net = Math.floor(this.networkRate() * t); return { seconds: t, cash: own + net, own, network: net, capped: awaySec > ECON.offlineCapSec, rate: this.offlineRate() + this.networkRate() }; }
   /* --- save/load --- */
-  toJSON() { return { v: SAVE_VERSION, cash: this.cash, totalEarned: this.totalEarned, playTime: this.playTime, time: this.time, built: this.built, paid: this.paid, upgrades: this.upgrades,
+  servoJSON() { return { servo: SERVO.id, cash: this.cash, totalEarned: this.totalEarned, playTime: this.playTime, time: this.time, built: this.built, paid: this.paid, upgrades: this.upgrades,
     tray: this.tray, shelf: this.shelf, piles: this.piles, player: { x: this.player.x, y: this.player.y }, carry: this.player.carry.slice(), stats: this.stats, flags: this.flags,
-    firstPlay: this.firstPlay, lastSeen: this.now(), chaosT: this.chaosT, staffCarry: Object.fromEntries(Object.entries(this.staff).map(([k, s]) => [k, s.carry.slice()])) }; }
+    chaosT: this.chaosT, fuel: this.fuel, depotTray: this.depotTray, share: this.share, netAccum: this.netAccum, staffCarry: Object.fromEntries(Object.entries(this.staff).map(([k, s]) => [k, s.carry.slice()])) }; }
+  toJSON() { return Object.assign(this.servoJSON(), { v: SAVE_VERSION, active: SERVO.id, others: this.world.others, unlocked: this.world.unlocked, bigThings: this.world.bigThings, thongs: this.world.thongs, firstPlay: this.firstPlay, lastSeen: this.now() }); }
   load(d) {
-    this.reset(); d = Save.migrate(d);
+    d = Save.migrate(d);
+    const w = this.world; w.others = {}; for (const id in (d.others || {})) if (SERVOS[id] && id !== d.active) w.others[id] = d.others[id];
+    w.unlocked = Object.assign({ outback: true }, d.unlocked || {}); w.bigThings = Object.assign({}, d.bigThings || {}); w.thongs = {}; for (const id in (d.thongs || {})) if (THONG_BY_ID[id]) w.thongs[id] = Math.max(1, Number(d.thongs[id]) || 1);
+    w.active = SERVOS[d.active] ? d.active : 'outback'; useServo(w.active); w.unlocked[w.active] = true;
+    this.firstPlay = Number(d.firstPlay) || this.now(); this.loadServoState(d); this.lastSeen = Number(d.lastSeen) || this.now();
+  }
+  loadServoState(d, crew) { // loads the active servo's own state (uses the current useServo bindings)
+    this.reset(); d = d || {}; const fresh = !d.built;
+    if (!fresh) {
     this.cash = Math.max(0, Number(d.cash) || 0); this.totalEarned = Math.max(this.cash, Number(d.totalEarned) || 0); this.playTime = Number(d.playTime) || 0; this.time = Number(d.time) || 0;
     this.built = {}; for (const id of ORDER) if (d.built && d.built[id]) this.built[id] = true;
-    this.paid = Object.assign({}, d.paid || {}); for (const id in this.built) this.paid[id] = STATION_BY_ID[id].cost;
+    this.paid = Object.assign({}, d.paid || {}); for (const id in this.paid) if (!STATION_BY_ID[id]) delete this.paid[id]; for (const id in this.built) this.paid[id] = STATION_BY_ID[id].cost;
     for (const u of UPGRADES) this.upgrades[u.id] = clamp(Number((d.upgrades || {})[u.id]) || 0, 0, u.max);
     for (const it of ITEMS) { this.tray[it] = clamp(Number((d.tray || {})[it]) || 0, 0, ECON.makers[it].cap); this.shelf[it] = clamp(Number((d.shelf || {})[it]) || 0, 0, ECON.shelfCap); }
     this.piles = {}; for (const id in (d.piles || {})) if (STATION_BY_ID[id]) this.piles[id] = Math.max(0, Number(d.piles[id]) || 0);
     if (d.player && isFinite(d.player.x) && isFinite(d.player.y)) { this.player.x = clamp(d.player.x, 2, MAP.W - 0.3); this.player.y = clamp(d.player.y, 0.3, MAP.H - 0.3); }
-    this.player.carry = (Array.isArray(d.carry) ? d.carry : []).filter(it => ITEMS.includes(it)).slice(0, 64);
+    this.player.carry = (Array.isArray(d.carry) ? d.carry : []).filter(it => ITEMS.includes(it) || (it === 'fuel' && ECON.tank)).slice(0, 64);
     this.stats = Object.assign(this.stats, d.stats || {}); this.flags = Object.assign({}, d.flags || {});
-    this.firstPlay = Number(d.firstPlay) || this.now(); this.lastSeen = Number(d.lastSeen) || this.now(); this.chaosT = Number(d.chaosT) || ECON.chaosFirst;
+    this.chaosT = Number(d.chaosT) || ECON.chaosFirst;
+    if (ECON.tank) { this.fuel = clamp(Number(d.fuel ?? ECON.tank.start) || 0, 0, ECON.tank.cap); this.depotTray = clamp(Number(d.depotTray) || 0, 0, ECON.tanker.trayCap); }
+    this.share = clamp(Number(d.share ?? 0.5) || 0.5, 0.2, 1); this.netAccum = Math.max(0, Number(d.netAccum) || 0);
+    }
+    if (crew) for (const u of UPGRADES) if (u.crew) this.upgrades[u.id] = clamp(Number(crew[u.id]) || 0, 0, u.max);
+    if (this.built[SERVO.bigThing]) this.world.bigThings[SERVO.id] = true; for (const id in this.world.others) { const o = this.world.others[id]; if (o.built && SERVOS[id] && o.built[SERVOS[id].bigThing]) this.world.bigThings[id] = true; }
     this.grid.rebuild(this.built);
-    for (const st of STATIONS) { if (!this.built[st.id]) continue; if (st.kind === 'hire') { this.hire(st.staff); this.staff[st.staff].bubble = null; const sc = (d.staffCarry || {})[st.staff]; if (Array.isArray(sc)) this.staff[st.staff].carry = sc.filter(it => ITEMS.includes(it)); } if (st.kind === 'pump' || st.kind === 'carwash') this.carT[st.id] = this.rng.range(1, 4); }
+    for (const st of STATIONS) { if (!this.built[st.id]) continue; if (st.kind === 'hire') { this.hire(st.staff); this.staff[st.staff].bubble = null; const sc = (d.staffCarry || {})[st.staff]; if (Array.isArray(sc)) this.staff[st.staff].carry = sc.filter(it => ITEMS.includes(it) || it === 'fuel'); } if (st.kind === 'pump' || st.kind === 'carwash' || st.kind === 'mechanic') this.carT[st.id] = this.rng.range(1, 4); }
     this.fx.length = 0; // loading should not replay sounds
     this.unstick(this.player, 0.3); this.ensureReachable(this.player);
+  }
+  canTravel(id) { return !!SERVOS[id] && id !== SERVO.id && !!this.world.unlocked[id]; }
+  travel(id) { // park this servo (it keeps earning for the network) and open the other one
+    if (!this.canTravel(id)) return false; const from = SERVO.id; const crew = {}; for (const u of UPGRADES) if (u.crew) crew[u.id] = this.upgrades[u.id];
+    const snap = this.servoJSON(); snap.rate = this.offlineRate(); this.world.others[from] = snap;
+    useServo(id); const next = this.world.others[id]; delete this.world.others[id]; this.world.active = id;
+    this.loadServoState(next || null, crew); if (!next) { this.player.x = MAP.playerStart.x; this.player.y = MAP.playerStart.y; }
+    this.fx.push({ t: 'travel', from, to: id, fresh: !next }); this.track('servo_travel', { from, to: id, first_visit: !next, minutes_since_first_play: this.minutesSinceFirst() }); return true;
   }
 }
 
 /* ---------------- 8. RENDERER (canvas 2D, 3/4 view, all art drawn in code) ---------------- */
 const INK = '#2b1a14';
-const DAY_CYCLE = 360; // seconds of play per full day/night cycle
 const WORLD_MARGIN = 6; // tiles of outback drawn around the map (seen on wide screens)
 function rr(ctx, x, y, w, h, r) { r = Math.max(0, Math.min(r, w / 2, h / 2)); ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
 function box(ctx, x, y, w, h, r, fill, stroke = INK, lw = 3) { rr(ctx, x, y, w, h, r); ctx.fillStyle = fill; ctx.fill(); if (stroke) { ctx.lineWidth = lw; ctx.strokeStyle = stroke; ctx.stroke(); } }
@@ -830,11 +1007,13 @@ function label(ctx, text, x, y, size, fill = '#fff', stroke = INK, align = 'cent
 function pill(ctx, text, x, y, size, bg = INK, fg = '#fff3dc', padX = 8) { ctx.font = '900 ' + size + 'px ' + FONT; const w = ctx.measureText(text).width + padX * 2, h = size + 10; box(ctx, x - w / 2, y - h / 2, w, h, h / 2, bg, '#fff3dc', 2); ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = fg; ctx.fillText(text, x, y + 1); return w; }
 function makeCanvas(w, h) { w = Math.max(1, Math.ceil(w)); h = Math.max(1, Math.ceil(h)); if (typeof OffscreenCanvas !== 'undefined') return new OffscreenCanvas(w, h); const c = document.createElement('canvas'); c.width = w; c.height = h; return c; }
 const easeOutBack = t => { const c1 = 1.9, c3 = c1 + 1; return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2); };
-const smooth = t => t <= 0 ? 0 : t >= 1 ? 1 : t * t * (3 - 2 * t);
 const LOOKS = {
   player: { key: 'player', shirt: '#2e8bd8', skin: '#e0ac69', hat: 'akubra', hair: '#5a3a1a' },
   gav:    { key: 'gav', shirt: '#ff7a1a', skin: '#f1c27d', hat: 'hardhat', hair: '#3a2a1a', hivis: true },
   val:    { key: 'val', shirt: '#9b5de5', skin: '#ffdbac', hat: 'bun', hair: '#d9d9d9', apron: true, glasses: true },
+  trev:   { key: 'trev', shirt: '#2b7fd1', skin: '#e0ac69', hat: 'cap', hair: '#6b6b6b', hivis: true, capColor: '#f3c623' },
+  mick:   { key: 'mick', shirt: '#3a4a5a', skin: '#f1c27d', hat: 'none', hair: '#c9c9c9', apron: false, vest: false, mullet: true },
+  pete:   { key: 'pete', shirt: '#7a2a8a', skin: '#ffdbac', hat: 'cap', hair: '#222', capColor: '#7a2a8a', sunnies: true, chain: true },
   shazza: { key: 'shazza', shirt: '#f3e600', skin: '#c68642', hat: 'cap', hair: '#2a1a0a', hivis: true, ponytail: true, capColor: '#d64b2a' },
 };
 /* paints a character with feet at (sx, sy). Used once per sprite-cache entry, never per frame. */
@@ -868,6 +1047,12 @@ function paintPerson(ctx, sx, sy, T, look, face, frame, happy) {
   if (look.ponytail) ellipse(ctx, sx - face * 0.3 * T, hy + 0.05 * T, 0.08 * T, 0.18 * T, look.hair);
 }
 function paintCar(ctx, cx, cy, T, kind, color, south) {
+  if (kind === 'tanker' || kind === 'caravan') { const L = (kind === 'tanker' ? 2.9 : 2.5) * T, Wd = (kind === 'tanker' ? 0.9 : 0.85) * T, cabL = 0.95 * T; const cabY = south ? cy + L / 2 - cabL : cy - L / 2, trY = south ? cy - L / 2 : cy - L / 2 + cabL + 0.08 * T, trL = L - cabL - 0.08 * T;
+    ellipse(ctx, cx, cy + 0.05 * T, Wd * 0.58, L * 0.5, 'rgba(0,0,0,0.22)', null); ctx.fillStyle = '#111'; ctx.fillRect(cx - Wd / 2 - 0.06 * T, trY + trL * 0.55, Wd + 0.12 * T, 0.2 * T); ctx.fillRect(cx - Wd / 2 - 0.06 * T, cabY + 0.12 * T, Wd + 0.12 * T, 0.2 * T);
+    if (kind === 'tanker') { box(ctx, cx - Wd / 2, trY, Wd, trL, Wd / 2, '#dfe5ea'); ctx.fillStyle = 'rgba(255,255,255,0.7)'; ctx.fillRect(cx - Wd * 0.25, trY + 6, 5, trL - 12); ctx.fillStyle = '#d64b2a'; ctx.fillRect(cx - Wd / 2 + 2, trY + trL * 0.42, Wd - 4, 0.16 * T); label(ctx, 'FUEL', cx, trY + trL * 0.5, T * 0.16, '#fff', INK); }
+    else { box(ctx, cx - Wd / 2, trY, Wd, trL, 8, '#fbfbf5'); ctx.fillStyle = '#2b7fd1'; ctx.fillRect(cx - Wd / 2 + 2, trY + trL * 0.35, Wd - 4, 0.1 * T); box(ctx, cx - Wd * 0.3, trY + 0.15 * T, Wd * 0.6, 0.22 * T, 3, '#9fd8ff', INK, 1.5); }
+    box(ctx, cx - Wd / 2, cabY, Wd, cabL, 0.18 * T, kind === 'tanker' ? '#d64b2a' : color); box(ctx, cx - Wd * 0.4, south ? cabY + cabL * 0.55 : cabY + cabL * 0.12, Wd * 0.8, cabL * 0.3, 4, '#9fd8ff', INK, 2);
+    ctx.fillStyle = '#ffe27a'; const fy = south ? cy + L / 2 - 7 : cy - L / 2; ctx.fillRect(cx - Wd / 2 + 3, fy, 7, 7); ctx.fillRect(cx + Wd / 2 - 10, fy, 7, 7); return; }
   const L = (kind === 'roadtrain' ? 2.9 : kind === 'truck' ? 2.1 : 1.5) * T, Wd = (kind === 'truck' || kind === 'roadtrain' ? 0.9 : 0.8) * T; const dir = south ? 1 : -1;
   ellipse(ctx, cx, cy + 0.05 * T, Wd * 0.58, L * 0.5, 'rgba(0,0,0,0.22)', null);
   if (kind === 'roadtrain') {
@@ -923,7 +1108,7 @@ class Renderer {
   }
   carSprite(kind, color, south) {
     const key = kind + color + (south ? 's' : 'n'); let sp = this.carSprites.get(key); if (sp) return sp;
-    const T = this.T, d = this.dpr, w = 1.3 * T, h = (kind === 'roadtrain' ? 3.2 : kind === 'truck' ? 2.4 : 1.8) * T; const cv = makeCanvas(w * d, h * d); const c = cv.getContext('2d'); c.scale(d, d); c.lineJoin = 'round';
+    const T = this.T, d = this.dpr, w = 1.3 * T, h = (kind === 'roadtrain' || kind === 'tanker' ? 3.2 : kind === 'caravan' ? 2.8 : kind === 'truck' ? 2.4 : 1.8) * T; const cv = makeCanvas(w * d, h * d); const c = cv.getContext('2d'); c.scale(d, d); c.lineJoin = 'round';
     paintCar(c, w / 2, h / 2, T, kind, color, south); sp = { cv, w, h }; this.carSprites.set(key, sp); return sp;
   }
   playerLook() { const u = this.sim.upgrades; const key = 'p' + u.walk + '.' + u.carry + '.' + u.station + '.' + u.price + '.' + u.staff;
@@ -932,31 +1117,39 @@ class Renderer {
   /* ---------- static ground (map + outback margin), drawn once per resize ---------- */
   buildGround() {
     const T = this.T, dpr = this.dpr, M = WORLD_MARGIN; const gw = (MAP.W + M * 2) * T, gh = (MAP.H + M * 2) * T; const cv = makeCanvas(gw * dpr, gh * dpr);
-    const g = cv.getContext('2d'); g.scale(dpr, dpr); g.translate(M * T, M * T); const rng = new RNG(4242); g.lineJoin = 'round';
-    g.fillStyle = '#b9502f'; g.fillRect(-M * T, -M * T, gw, gh);
-    for (let i = 0; i < 1400; i++) { g.fillStyle = i % 3 ? '#a8452a' : '#cf6a45'; g.fillRect(rng.range(-M, MAP.W + M) * T, rng.range(-M, MAP.H + M) * T, T * 0.14, T * 0.07); }
-    for (let i = 0; i < 26; i++) { const x = rng.range(-M, MAP.W + M) * T, y = rng.range(-M, MAP.H + M) * T; if (x > -0.5 * T && x < 12 * T && y > 1 * T && y < 21.5 * T) continue; g.fillStyle = 'rgba(120,40,20,0.35)'; g.beginPath(); g.ellipse(x, y, T * rng.range(0.15, 0.4), T * rng.range(0.1, 0.25), rng.next() * 3, 0, Math.PI * 2); g.fill(); g.fillStyle = '#8d3b2e'; g.beginPath(); g.ellipse(x - 2, y - 3, T * 0.12, T * 0.08, 0, 0, Math.PI * 2); g.fill(); }
+    const g = cv.getContext('2d'); g.scale(dpr, dpr); g.translate(M * T, M * T); const rng = new RNG(4242); g.lineJoin = 'round'; const nb = SERVO.id === 'nullarbor';
+    g.fillStyle = nb ? '#d6bd8b' : '#b9502f'; g.fillRect(-M * T, -M * T, gw, gh);
+    for (let i = 0; i < 1400; i++) { g.fillStyle = nb ? (i % 3 ? '#c9ad78' : '#e6d2a4') : (i % 3 ? '#a8452a' : '#cf6a45'); g.fillRect(rng.range(-M, MAP.W + M) * T, rng.range(-M, MAP.H + M) * T, T * 0.14, T * 0.07); }
+    for (let i = 0; i < 26; i++) { const x = rng.range(-M, MAP.W + M) * T, y = rng.range(-M, MAP.H + M) * T; if (x > -0.5 * T && x < 12 * T && y > 1 * T && y < 21.5 * T) continue; g.fillStyle = nb ? 'rgba(120,100,70,0.3)' : 'rgba(120,40,20,0.35)'; g.beginPath(); g.ellipse(x, y, T * rng.range(0.15, 0.4), T * rng.range(0.1, 0.25), rng.next() * 3, 0, Math.PI * 2); g.fill(); g.fillStyle = nb ? '#efe6d2' : '#8d3b2e'; g.beginPath(); g.ellipse(x - 2, y - 3, T * 0.12, T * 0.08, 0, 0, Math.PI * 2); g.fill(); }
     const spinifex = (x, y, s) => { g.fillStyle = 'rgba(60,40,10,0.25)'; g.beginPath(); g.ellipse(x, y + 2, T * 0.32 * s, T * 0.1 * s, 0, 0, Math.PI * 2); g.fill(); g.strokeStyle = '#9aa346'; g.lineWidth = 2.2; for (let k = 0; k < 9; k++) { const a = -Math.PI / 2 + (k - 4) * 0.28; g.beginPath(); g.moveTo(x, y); g.lineTo(x + Math.cos(a) * T * 0.34 * s, y + Math.sin(a) * T * 0.3 * s); g.stroke(); } g.strokeStyle = '#c9c46a'; g.lineWidth = 1.2; for (let k = 0; k < 5; k++) { const a = -Math.PI / 2 + (k - 2) * 0.35; g.beginPath(); g.moveTo(x, y); g.lineTo(x + Math.cos(a) * T * 0.25 * s, y + Math.sin(a) * T * 0.24 * s); g.stroke(); } };
-    for (let i = 0; i < 90; i++) { const x = rng.range(-M, MAP.W + M), y = rng.range(-M, MAP.H + M); if (x > -0.2 && x < 11.8 && y > 1.6 && y < 21.4) continue; if (x > 0 && x < 2) continue; if (x > 11 && x < 13.5 && y > 3 && y < 9) continue; spinifex(x * T, y * T, rng.range(0.7, 1.3)); }
+    const saltbush = (x, y, sc) => { g.fillStyle = 'rgba(60,50,30,0.22)'; g.beginPath(); g.ellipse(x, y + 3, T * 0.34 * sc, T * 0.11 * sc, 0, 0, Math.PI * 2); g.fill(); for (let k = 0; k < 5; k++) { const ox = (k - 2) * 0.1 * T * sc, oy = -Math.abs(k - 2) * -0.03 * T - 0.12 * T * sc; circle(g, x + ox, y + oy, 0.15 * T * sc, k % 2 ? '#8fa39a' : '#a7b8a8', 'rgba(60,70,60,0.6)', 1.5); } };
+    for (let i = 0; i < 90; i++) { const x = rng.range(-M, MAP.W + M), y = rng.range(-M, MAP.H + M); if (x > -0.2 && x < 11.8 && y > 1.6 && y < 21.4) continue; if (x > 0 && x < 2) continue; if (!nb && x > 11 && x < 13.5 && y > 3 && y < 9) continue; if (nb && (y > MAP.H + 1.4 || (x > -5 && x < -0.2 && y > 5 && y < 13))) continue; (nb ? saltbush : spinifex)(x * T, y * T, rng.range(0.7, 1.3)); }
+    if (nb) { // the Bunda Cliffs and the Great Australian Bight along the bottom edge
+      const cy = (MAP.H + 1.9) * T; g.fillStyle = '#2a6f97'; g.fillRect(-M * T, cy + 0.9 * T, gw, gh); for (let i = 0; i < 60; i++) { g.fillStyle = 'rgba(255,255,255,' + rng.range(0.15, 0.45) + ')'; g.fillRect(rng.range(-M, MAP.W + M) * T, cy + rng.range(1.2, 4.5) * T, rng.range(0.3, 0.9) * T, 2.5); }
+      g.beginPath(); g.moveTo(-M * T, cy); for (let x = -M; x <= MAP.W + M; x += 0.5) g.lineTo(x * T, cy + Math.sin(x * 1.7) * 0.12 * T + rng.range(-0.05, 0.05) * T); g.lineTo((MAP.W + M) * T, cy + 1.0 * T); g.lineTo(-M * T, cy + 1.0 * T); g.closePath();
+      const cg = g.createLinearGradient(0, cy, 0, cy + T); cg.addColorStop(0, '#f2ead6'); cg.addColorStop(0.35, '#d9b98a'); cg.addColorStop(0.7, '#c08a5a'); cg.addColorStop(1, '#8a5a3a'); g.fillStyle = cg; g.fill(); g.strokeStyle = INK; g.lineWidth = 3; g.stroke();
+      g.strokeStyle = 'rgba(255,255,255,0.7)'; g.lineWidth = 4; g.beginPath(); for (let x = -M; x <= MAP.W + M; x += 0.25) g.lineTo(x * T, cy + 1.02 * T + Math.sin(x * 3) * 3); g.stroke(); }
     // highway (runs the whole world height)
     g.fillStyle = '#3b3b45'; g.fillRect(0, -M * T, 2 * T, gh); g.fillStyle = '#d9d9d9'; g.fillRect(1.9 * T, -M * T, 0.06 * T, gh); g.fillRect(0.04 * T, -M * T, 0.05 * T, gh);
     g.fillStyle = '#f3c623'; for (let y = -M * T; y < gh; y += T * 0.9) g.fillRect(0.97 * T, y, 0.06 * T, T * 0.45);
     g.fillStyle = 'rgba(0,0,0,0.18)'; for (let i = 0; i < 6; i++) { const y = rng.range(-M, MAP.H + M) * T; g.fillRect(rng.range(0.2, 1.4) * T, y, rng.range(0.2, 0.5) * T, 3); } // skid marks
     // roadside signs (left margin)
     const post = (x, y, w, h, fill, lines, fg) => { g.fillStyle = '#6b6b6b'; g.fillRect(x - 3, y, 6, 0.9 * T); box(g, x - w / 2, y - h, w, h, 6, fill); lines.forEach((ln, i) => label(g, ln, x, y - h + (i + 0.65) * (h / (lines.length + 0.3)), Math.min(T * 0.2, h / (lines.length + 0.6)), fg, null)); };
-    post(-1.3 * T, 4.5 * T, 1.7 * T, 0.75 * T, '#1f6b3a', ['NEXT SERVO', '412 km'], '#fff');
+    if (nb) { post(-6.6 * T, 3.5 * T, 2.2 * T, 1.0 * T, '#1f6b3a', ['DEAD STRAIGHT', '146 km'], '#fff'); post(-6.6 * T, 16.5 * T, 2.4 * T, 1.0 * T, '#1f6b3a', ['NULLARBOR PLAIN', 'TREELESS PLAIN'], '#fff');
+      { const x = -1.3 * T, y = 17.5 * T; g.fillStyle = '#6b6b6b'; g.fillRect(x - 3, y, 6, 0.9 * T); box(g, x - 0.95 * T, y - 0.7 * T, 1.9 * T, 0.7 * T, 5, '#f3c623'); for (const [i, n] of [[0, 'CAMEL'], [1, 'WOMBAT'], [2, 'ROO']]) label(g, n, x + (i - 1) * 0.62 * T, y - 0.35 * T, T * 0.12, INK, null); label(g, 'NEXT 91 km', x, y + 0.2 * T, T * 0.13, '#fff'); } }
+    else { post(-1.3 * T, 4.5 * T, 1.7 * T, 0.75 * T, '#1f6b3a', ['NEXT SERVO', '412 km'], '#fff');
     { const x = -1.3 * T, y = 11.5 * T; g.fillStyle = '#6b6b6b'; g.fillRect(x - 3, y, 6, 0.9 * T); g.save(); g.translate(x, y - 0.4 * T); g.rotate(Math.PI / 4); box(g, -0.42 * T, -0.42 * T, 0.84 * T, 0.84 * T, 5, '#f3c623'); g.restore(); g.fillStyle = INK; g.beginPath(); g.ellipse(x - 0.02 * T, y - 0.38 * T, 0.18 * T, 0.1 * T, -0.3, 0, Math.PI * 2); g.fill(); g.lineWidth = 3; g.strokeStyle = INK; g.beginPath(); g.moveTo(x - 0.18 * T, y - 0.33 * T); g.quadraticCurveTo(x - 0.3 * T, y - 0.2 * T, x - 0.32 * T, y - 0.12 * T); g.stroke(); g.beginPath(); g.arc(x + 0.13 * T, y - 0.5 * T, 0.06 * T, 0, Math.PI * 2); g.fill(); }
-    post(-1.3 * T, 18 * T, 1.0 * T, 1.0 * T, '#fff', ['110'], INK); g.lineWidth = 4; g.strokeStyle = '#d64b2a'; g.beginPath(); g.arc(-1.3 * T, 17.5 * T, 0.42 * T, 0, Math.PI * 2); g.stroke();
+    post(-1.3 * T, 18 * T, 1.0 * T, 1.0 * T, '#fff', ['110'], INK); g.lineWidth = 4; g.strokeStyle = '#d64b2a'; g.beginPath(); g.arc(-1.3 * T, 17.5 * T, 0.42 * T, 0, Math.PI * 2); g.stroke(); }
     // forecourt
     g.fillStyle = '#9d9c95'; g.fillRect(2 * T, 1.9 * T, 4 * T, 19.2 * T); g.strokeStyle = 'rgba(0,0,0,0.12)'; g.lineWidth = 2;
     for (let x = 2; x <= 6; x++) { g.beginPath(); g.moveTo(x * T, 1.9 * T); g.lineTo(x * T, 21.1 * T); g.stroke(); } for (let y = 2; y <= 21; y++) { g.beginPath(); g.moveTo(2 * T, y * T); g.lineTo(6 * T, y * T); g.stroke(); }
     for (let i = 0; i < 18; i++) { g.fillStyle = 'rgba(30,20,20,0.12)'; g.beginPath(); g.ellipse(T * rng.range(2.3, 5.7), T * rng.range(2.5, 20.5), T * rng.range(0.1, 0.35), T * rng.range(0.06, 0.18), 0, 0, Math.PI * 2); g.fill(); }
     for (const py of [5.5, 9.5, 13.5]) { g.strokeStyle = '#f1e6cb'; g.lineWidth = 3; g.setLineDash([T * 0.15, T * 0.1]); g.strokeRect(2.15 * T, (py - 1) * T, 1.1 * T, 2 * T); g.setLineDash([]); }
     // canopy pillars along the pump island
-    for (const py of [3.2, 7.3, 11.3, 15.4]) { box(g, 3.75 * T, py * T, 0.22 * T, 0.22 * T, 3, '#d64b2a', INK, 2); }
+    for (const py of [3.2, 7.3, 11.3, 15.4]) { box(g, 3.75 * T, py * T, 0.22 * T, 0.22 * T, 3, nb ? '#2f6b4f' : '#d64b2a', INK, 2); }
     g.fillStyle = '#c9c6ba'; g.fillRect(2 * T, 21.1 * T, 10 * T, 0.9 * T);
     // shop floor
-    for (let y = 3; y < 17; y++) for (let x = 7; x < 11; x++) { g.fillStyle = (x + y) % 2 ? '#f1e6cb' : '#dfd0ab'; g.fillRect(x * T, y * T, T, T); }
+    for (let y = 3; y < 17; y++) for (let x = 7; x < 11; x++) { g.fillStyle = nb ? ((x + y) % 2 ? '#e3ece9' : '#c9d8d4') : ((x + y) % 2 ? '#f1e6cb' : '#dfd0ab'); g.fillRect(x * T, y * T, T, T); }
     g.fillStyle = '#c7b7d9'; g.fillRect(7 * T, 13 * T, 4 * T, 4 * T); for (let y = 13; y < 17; y++) for (let x = 7; x < 11; x++) { if ((x + y) % 2) { g.fillStyle = '#b8a7cc'; g.fillRect(x * T, y * T, T, T); } }
     // shelves of chips & drinks fridge along the inside walls (decor)
     for (let i = 0; i < 5; i++) { box(g, 7.08 * T, (5.3 + i * 0.75) * T, 0.32 * T, 0.6 * T, 3, ['#e4572e', '#f3c623', '#3d9be9', '#4fb86a', '#9b5de5'][i], INK, 1.5); }
@@ -964,9 +1157,11 @@ class Renderer {
     // walls
     const s = MAP.shop; for (let y = s.y; y < s.y + s.h; y++) for (let x = s.x; x < s.x + s.w; x++) { const wall = x === s.x || x === s.x + s.w - 1 || y === s.y || y === s.y + s.h - 1; if (!wall) continue;
       if (MAP.door.some(d => d.x === x && d.y === y)) { g.fillStyle = '#6b4a2b'; g.fillRect(x * T, y * T, T, T); g.fillStyle = '#7fc4e8'; g.fillRect(x * T + T * 0.15, y * T + T * 0.1, T * 0.7, T * 0.8); g.fillStyle = 'rgba(255,255,255,0.5)'; g.fillRect(x * T + T * 0.2, y * T + T * 0.15, T * 0.12, T * 0.6); continue; }
-      g.fillStyle = '#8e3a2d'; g.fillRect(x * T, y * T, T, T); g.fillStyle = '#a84a3a'; g.fillRect(x * T, y * T, T, T * 0.35); g.strokeStyle = INK; g.lineWidth = 2; g.strokeRect(x * T + 1, y * T + 1, T - 2, T - 2); }
+      g.fillStyle = nb ? '#e9e4d8' : '#8e3a2d'; g.fillRect(x * T, y * T, T, T); g.fillStyle = nb ? '#2f6b4f' : '#a84a3a'; g.fillRect(x * T, y * T, T, T * 0.35); if (nb) { g.strokeStyle = 'rgba(0,0,0,0.12)'; g.lineWidth = 1.5; for (let k = 1; k < 5; k++) { g.beginPath(); g.moveTo(x * T + k * T / 5, y * T + T * 0.35); g.lineTo(x * T + k * T / 5, y * T + T); g.stroke(); } } g.strokeStyle = INK; g.lineWidth = 2; g.strokeRect(x * T + 1, y * T + 1, T - 2, T - 2); }
     g.fillStyle = 'rgba(0,0,0,0.25)'; g.fillRect(6.5 * T, 9 * T, 0.4 * T, 2 * T);
-    // back yard: water tank, dunny, tyres, dead gum
+    // back yard: water tank, dunny, tyres, dead gum (the Nullarbor gets a dunny by the cliffs and no trees)
+    if (nb) { box(g, 10.45 * T, 19.6 * T, 0.95 * T, 1.3 * T, 4, '#5d8a5a'); box(g, 10.4 * T, 19.45 * T, 1.05 * T, 0.25 * T, 3, '#b8b8b0'); box(g, 10.65 * T, 19.95 * T, 0.55 * T, 0.9 * T, 3, '#4a6e48', INK, 2); label(g, 'DUNNY', 10.92 * T, 19.57 * T, T * 0.13, INK, null);
+      for (let i = 0; i < 3; i++) ellipse(g, 7.1 * T, (20.6 - i * 0.12) * T, 0.36 * T, 0.18 * T, '#222', '#000', 2); this.ground = cv; return; }
     g.fillStyle = '#7f8c8d'; g.fillRect(7.5 * T, 18.6 * T, 1.4 * T, 1.3 * T); g.fillStyle = '#95a5a6'; g.beginPath(); g.ellipse(8.2 * T, 18.6 * T, 0.7 * T, 0.25 * T, 0, 0, Math.PI * 2); g.fill(); g.strokeStyle = INK; g.lineWidth = 3; g.strokeRect(7.5 * T, 18.6 * T, 1.4 * T, 1.3 * T); g.strokeStyle = 'rgba(0,0,0,0.2)'; for (let i = 1; i < 5; i++) { g.beginPath(); g.moveTo(7.5 * T, (18.6 + i * 0.26) * T); g.lineTo(8.9 * T, (18.6 + i * 0.26) * T); g.stroke(); }
     box(g, 9.25 * T, 18.4 * T, 0.95 * T, 1.45 * T, 4, '#5d8a5a'); box(g, 9.2 * T, 18.25 * T, 1.05 * T, 0.25 * T, 3, '#b8b8b0'); box(g, 9.45 * T, 18.8 * T, 0.55 * T, 1.0 * T, 3, '#4a6e48', INK, 2); g.fillStyle = '#ffe27a'; g.beginPath(); g.arc(9.72 * T, 19.0 * T, 0.08 * T, Math.PI * 0.3, Math.PI * 1.7); g.fill(); label(g, 'DUNNY', 9.72 * T, 18.37 * T, T * 0.13, INK, null);
     for (let i = 0; i < 3; i++) ellipse(g, 7.1 * T, (20.6 - i * 0.12) * T, 0.36 * T, 0.18 * T, '#222', '#000', 2);
@@ -984,15 +1179,15 @@ class Renderer {
   spawnDust(x, y, vx = 0, vy = 0, dur = 0.45, color = '#e6c39a', r = 0.12) { if (this.dust.active.length > 140) return; const d = this.dust.get(); d.x = x; d.y = y; d.vx = vx; d.vy = vy; d.t = 0; d.dur = dur; d.color = color; d.r = r; }
   spawnNote(fromX, fromY, toX, toY) { if (this.notes.active.length > 40) return; const n = this.notes.get(); n.fx = fromX; n.fy = fromY; n.tx = toX + (Math.random() - 0.5) * 0.5; n.ty = toY + (Math.random() - 0.5) * 0.3; n.t = 0; n.dur = 0.32; n.rot = Math.random() * 6; }
   /* ---------- day / night ---------- */
-  dayState() { const ph = ((this.sim.time / DAY_CYCLE + 0.15) % 1 + 1) % 1; let n = 0;
-    if (ph >= 0.5 && ph < 0.6) n = smooth((ph - 0.5) / 0.1); else if (ph >= 0.6 && ph < 0.85) n = 1; else if (ph >= 0.85 && ph < 0.95) n = 1 - smooth((ph - 0.85) / 0.1);
-    const warm = Math.max(0, 1 - Math.abs(ph - 0.54) / 0.08) + Math.max(0, 1 - Math.abs(ph - 0.9) / 0.07) * 0.7; return { ph, night: n, warm }; }
+  dayState() { return this.sim.dayState(); }
+  onServoChange() { this.buildGround(); this.reveal = {}; this.overlayState = ''; this.dust.clear(); this.notes.clear(); this.popups.clear(); this.sparks.clear(); this.goal = null; this.cam.x = this.sim.player.x; this.cam.y = this.sim.player.y + 1; this.lastPX = this.sim.player.x; this.amb.roo = null; this.amb.weed = null; }
   /* ---------- main render ---------- */
   render(dt) {
     const ctx = this.ctx, sim = this.sim, T = this.T, W = this.W, H = this.H; this.time += dt; this.frames++; this.fpsT += dt; if (this.fpsT >= 1) { this.fps = this.frames; this.frames = 0; this.fpsT = 0; }
     this.goalT -= dt; if (this.goalT <= 0) { this.goalT = 0.15; this.goal = sim.nextGoal(); }
     const p = sim.player; const vw = W / T, vh = H / T; let tx = p.x, ty = p.y + 1.2;
-    if (vw >= MAP.W) tx = MAP.W / 2; else tx = clamp(tx, vw / 2, MAP.W - vw / 2); if (vh >= MAP.H + 2) ty = (MAP.H + 2) / 2; else ty = clamp(ty, vh / 2, MAP.H + 2 - vh / 2);
+    const cL = SERVO.rival ? -3.5 : 0, cT = -1.2, cB = MAP.H + (SERVO.id === 'nullarbor' ? 3.8 : 2); if (sim.event === 'pricewar') tx -= 1.5;
+    if (vw >= MAP.W - cL) tx = (MAP.W + cL) / 2; else tx = clamp(tx, cL + vw / 2, MAP.W - vw / 2); if (vh >= cB - cT) ty = (cB + cT) / 2; else ty = clamp(ty, cT + vh / 2, cB - vh / 2);
     const k = 1 - Math.pow(0.001, dt); this.cam.x += (tx - this.cam.x) * k; this.cam.y += (ty - this.cam.y) * k;
     // player body dynamics: carry-stack lean spring + squash
     const pvx = (p.x - this.lastPX) / Math.max(dt, 1e-3); this.lastPX = p.x; const target = clamp(-pvx * 0.06, -0.35, 0.35); this.leanV += ((target - this.lean) * 90 - this.leanV * 9) * dt; this.lean += this.leanV * dt; this.squash *= Math.pow(0.002, dt);
@@ -1005,21 +1200,24 @@ class Renderer {
     const world = () => { ctx.translate(shx, shy); if (z > 1) { ctx.translate(W / 2, H / 2); ctx.scale(z, z); ctx.translate(-W / 2, -H / 2); } };
     ctx.save(); world();
     const [gx, gy] = this.w2s(-WORLD_MARGIN, -WORLD_MARGIN), gw = (MAP.W + WORLD_MARGIN * 2) * T, gh = (MAP.H + WORLD_MARGIN * 2) * T;
-    if (gx > -12 || gy > -12 || gx + gw < W + 12 || gy + gh < H + 12) { ctx.fillStyle = '#b9502f'; ctx.fillRect(-20, -20, W + 40, H + 40); } // only clear when the ground doesn't cover the screen
+    if (gx > -12 || gy > -12 || gx + gw < W + 12 || gy + gh < H + 12) { ctx.fillStyle = SERVO.id === 'nullarbor' ? '#d6bd8b' : '#b9502f'; ctx.fillRect(-20, -20, W + 40, H + 40); } // only clear when the ground doesn't cover the screen
     ctx.drawImage(this.ground, gx, gy, gw, gh);
     this.drawCloudShadows();
     for (const id of sim.visiblePads()) this.drawPad(STATION_BY_ID[id]);
     if (sim.built.counter && !sim.staff.val) { const [sx, sy] = this.w2s(MAP.serveSpot.x, MAP.serveSpot.y); ctx.globalAlpha = 0.55 + 0.25 * Math.sin(this.time * 4); ellipse(ctx, sx, sy, T * 0.38, T * 0.2, p.atCounter ? '#4fb86a' : '#ffe27a', INK, 2); ctx.globalAlpha = 1; label(ctx, 'SERVE', sx, sy, T * 0.2, INK, null); }
     this.drawDust();
     const items = [];
-    items.push({ y: 2.45, f: () => this.drawSign() }); items.push({ y: 7.5, f: () => this.drawWindmill(14.5, 7.5) }); items.push({ y: 2.75, f: () => this.drawBin(2.5, 2.75) });
+    items.push({ y: 2.45, f: () => this.drawSign() });
+    if (SERVO.id === 'nullarbor') { items.push({ y: 12.5, f: () => this.drawPete() }); items.push({ y: MAP.tank.y + 1, f: () => this.drawTank() }); items.push({ y: MAP.priceBoard.y + 1, f: () => this.drawPriceBoard() }); this.drawWhales(); }
+    else { items.push({ y: 7.5, f: () => this.drawWindmill(14.5, 7.5) }); items.push({ y: 2.75, f: () => this.drawBin(2.5, 2.75) }); }
+    for (const th of sim.floorThongs) items.push({ y: th.y, f: () => this.drawFloorThong(th) });
     for (const st of STATIONS) if (sim.built[st.id]) items.push({ y: st.y + st.h - 0.01, f: () => this.drawStation(st) });
     for (const id in sim.piles) if (sim.piles[id] >= 1) { const pp = STATION_BY_ID[id].pile; items.push({ y: pp.y, f: () => this.drawPile(pp.x, pp.y, sim.piles[id]) }); }
     for (const c of sim.cars) items.push({ y: c.y + sim.carLen(c.kind) / 2, f: () => this.drawCar(c) });
     for (const c of sim.customers) items.push({ y: c.y, f: () => this.drawCustomer(c) });
     for (const who in sim.staff) items.push({ y: sim.staff[who].y, f: () => this.drawStaff(sim.staff[who]) });
     for (const b of sim.ibises) items.push({ y: b.y, f: () => this.drawIbis(b) });
-    if (this.amb.roo) items.push({ y: this.amb.roo.y, f: () => this.drawRoo(this.amb.roo) }); if (this.amb.weed) items.push({ y: this.amb.weed.y, f: () => this.drawWeed(this.amb.weed) });
+    if (this.amb.roo) items.push({ y: this.amb.roo.y, f: () => (this.amb.roo.kind === 'wombat' ? this.drawWombat(this.amb.roo) : this.amb.roo.kind === 'camel' ? this.drawCamel(this.amb.roo) : this.drawRoo(this.amb.roo)) }); if (this.amb.weed) items.push({ y: this.amb.weed.y, f: () => this.drawWeed(this.amb.weed) });
     items.push({ y: p.y, f: () => this.drawPlayer() });
     items.sort((a, b) => a.y - b.y); for (const it of items) it.f();
     for (const g of sim.seagulls) this.drawSeagull(g);
@@ -1032,14 +1230,14 @@ class Renderer {
     this.drawScreenParticles(dt); this.drawEdgeAlerts(); this.drawHand(); this.drawJoystick();
   }
   updateAmbient(dt) { const a = this.amb;
-    a.rooT -= dt; if (!a.roo && a.rooT <= 0) { a.rooT = 25 + Math.random() * 25; const left = Math.random() < 0.5; a.roo = { x: left ? -WORLD_MARGIN : MAP.W + WORLD_MARGIN, y: Math.random() < 0.5 ? 0.9 : 21.6, dir: left ? 1 : -1, hop: 0 }; }
-    if (a.roo) { a.roo.hop += dt * 2.4; a.roo.x += a.roo.dir * 3.2 * dt; if (a.roo.x < -WORLD_MARGIN - 1 || a.roo.x > MAP.W + WORLD_MARGIN + 1) a.roo = null; }
+    a.rooT -= dt; if (!a.roo && a.rooT <= 0) { a.rooT = 25 + Math.random() * 25; const left = Math.random() < 0.5; a.roo = { x: left ? -WORLD_MARGIN : MAP.W + WORLD_MARGIN, y: Math.random() < 0.5 ? 0.9 : 21.6, dir: left ? 1 : -1, hop: 0, kind: SERVO.id === 'nullarbor' ? ['roo', 'wombat', 'camel'][Math.floor(Math.random() * 3)] : 'roo' }; }
+    if (a.roo) { a.roo.hop += dt * 2.4; a.roo.x += a.roo.dir * (a.roo.kind === 'wombat' ? 1.1 : a.roo.kind === 'camel' ? 1.6 : 3.2) * dt; if (a.roo.x < -WORLD_MARGIN - 1 || a.roo.x > MAP.W + WORLD_MARGIN + 1) a.roo = null; }
     a.weedT -= dt; if (!a.weed && a.weedT <= 0) { a.weedT = 18 + Math.random() * 20; a.weed = { x: -WORLD_MARGIN, y: Math.random() < 0.5 ? 1.2 : 21.5, rot: 0, bounce: 0 }; }
     if (a.weed) { a.weed.x += 2.2 * dt; a.weed.rot += dt * 4; a.weed.bounce += dt * 6; if (a.weed.x > MAP.W + WORLD_MARGIN) a.weed = null; }
     for (const c of a.clouds) { c.x += 0.35 * dt; c.y += 0.2 * dt; if (c.x > MAP.W + 10) { c.x = -12; c.y = Math.random() * MAP.H - 6; } } }
   drawCloudShadows() { const ctx = this.ctx, T = this.T; ctx.fillStyle = 'rgba(40,10,30,0.07)'; for (const c of this.amb.clouds) { const [sx, sy] = this.w2s(c.x, c.y); ctx.beginPath(); ctx.ellipse(sx, sy, c.r * T, c.r * 0.6 * T, 0.3, 0, Math.PI * 2); ctx.ellipse(sx + c.r * 0.6 * T, sy + 0.4 * T, c.r * 0.7 * T, c.r * 0.45 * T, 0.3, 0, Math.PI * 2); ctx.fill(); } }
-  drawSign() { const ctx = this.ctx, T = this.T; const [sx, sy] = this.w2s(6.6, 1.55); const w = 4.8 * T, h = 0.9 * T; box(ctx, sx, sy, w, h, 6, '#d64b2a', INK, 3);
-    const text = (this.servoName ? this.servoName.toUpperCase() + "'S " : '') + 'SERVO'; let size = 0.6 * T; ctx.font = '900 ' + size + 'px ' + FONT; const tw = ctx.measureText(text).width; if (tw > w - 16) size *= (w - 16) / tw;
+  drawSign() { const ctx = this.ctx, T = this.T; const [sx, sy] = this.w2s(6.6, 1.55); const w = 4.8 * T, h = 0.9 * T; box(ctx, sx, sy, w, h, 6, SERVO.id === 'nullarbor' ? '#2f6b4f' : '#d64b2a', INK, 3);
+    const text = this.servoName ? this.servoName.toUpperCase() + "'S " + SERVO.signWord : (SERVO.defaultSign || SERVO.signWord); let size = 0.6 * T; ctx.font = '900 ' + size + 'px ' + FONT; const tw = ctx.measureText(text).width; if (tw > w - 16) size *= (w - 16) / tw;
     const n = this.night; const flick = n > 0.3 && Math.sin(this.time * 23) > 0.96 ? 0.4 : 1;
     if (n > 0.05) { label(ctx, text, sx + w / 2, sy + h / 2 + 1, size, 'rgba(0,0,0,0)', 'rgba(255,90,170,' + (0.5 * n * flick) + ')'); ctx.lineWidth = size * 0.5; ctx.strokeText(text, sx + w / 2, sy + h / 2 + 1); label(ctx, text, sx + w / 2, sy + h / 2 + 1, size, n > 0.3 ? 'rgba(255,230,245,' + (0.7 + 0.3 * flick) + ')' : '#fff3dc', INK); } else label(ctx, text, sx + w / 2, sy + h / 2 + 1, size, '#fff3dc', INK);
     pill(ctx, n > 0.5 ? 'OPEN 24/7' : 'OPEN', sx + w - 0.55 * T, sy + h + 0.12 * T, Math.max(9, T * 0.15), n > 0.5 ? '#4fb86a' : INK, '#fff', 5); }
@@ -1098,6 +1296,17 @@ class Renderer {
         box(ctx, sx + 0.05 * T, sy + 0.1 * T, 0.35 * T, h - 0.2 * T, 6, '#2b7fd1'); box(ctx, sx + w - 0.4 * T, sy + 0.1 * T, 0.35 * T, h - 0.2 * T, 6, '#2b7fd1'); box(ctx, sx, sy - 0.2 * T, w, 0.4 * T, 6, '#3d9be9'); L(ctx, 'CAR WASH', sx + w / 2, sy, T * 0.2, '#fff');
         const rot = busy ? this.time * 10 : 0; for (const bx of [sx + 0.22 * T, sx + w - 0.22 * T]) { circle(ctx, bx, sy + 1.0 * T, 0.3 * T, '#5dade2'); for (let i = 0; i < 6; i++) { const a = rot + i; ctx.strokeStyle = '#1b4f72'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(bx, sy + T); ctx.lineTo(bx + Math.cos(a) * 0.28 * T, sy + T + Math.sin(a) * 0.28 * T); ctx.stroke(); } }
         if (busy) for (let i = 0; i < 9; i++) { const t = (this.time * 1.5 + i * 0.37) % 1; circle(ctx, sx + 0.3 * T + ((i * 37) % 100) / 100 * (w - 0.6 * T), sy + h - t * h, 4 + 3 * Math.sin(i), 'rgba(255,255,255,' + (0.85 - t * 0.7) + ')', 'rgba(150,200,255,0.6)', 1); } break; }
+      case 'depot': { box(ctx, sx, sy + 0.1 * T, w, h - 0.1 * T, 8, 'rgba(120,120,110,0.35)', '#6b6b6b', 2); ctx.setLineDash([6, 6]); ctx.strokeStyle = '#f3c623'; ctx.lineWidth = 3; ctx.strokeRect(sx + 0.65 * T, sy + 0.25 * T, 0.7 * T, h - 0.5 * T); ctx.setLineDash([]);
+        const n = ghost ? 6 : sim.depotTray; for (let i = 0; i < Math.min(n, 12); i++) { const cx = sx + 1.65 * T + (i % 2) * 0.22 * T, cy = sy + 1.75 * T - Math.floor(i / 2) * 0.18 * T; this.drawItem(cx, cy, 'fuel', 0.7); }
+        L(ctx, 'FUEL DEPOT', sx + w / 2, sy + 0.05 * T, T * 0.18, '#fff'); if (!ghost) pill(ctx, n + ' drums', sx + 1.75 * T, sy + 0.45 * T, Math.max(10, T * 0.17), n > 0 ? '#2d7a3e' : INK, '#fff', 6); break; }
+      case 'mechanic': { box(ctx, sx + 0.05 * T, sy - 0.25 * T, w - 0.1 * T, 1.2 * T, 6, '#c9c9c0'); for (let i = 0; i < 6; i++) { ctx.fillStyle = i % 2 ? '#b0b0a6' : '#d6d6cc'; ctx.fillRect(sx + 0.15 * T, sy - 0.1 * T + i * 0.15 * T, w - 0.3 * T, 0.12 * T); } box(ctx, sx + 0.1 * T, sy - 0.45 * T, w - 0.2 * T, 0.3 * T, 4, '#d64b2a'); L(ctx, 'MECHANIC', sx + w / 2, sy - 0.3 * T, T * 0.19, '#fff');
+        if (!ghost) { ctx.save(); ctx.translate(sx + w - 0.35 * T, sy + 0.55 * T); ctx.rotate(Math.sin(this.time * (sim.cars.some(c => c.state === 'repair' && c.fixing) ? 18 : 0)) * 0.6); ctx.strokeStyle = INK; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(-0.15 * T, 0.15 * T); ctx.lineTo(0.12 * T, -0.12 * T); ctx.stroke(); circle(ctx, 0.14 * T, -0.14 * T, 0.07 * T, '#bdbdbd', INK, 2); ctx.restore(); } break; }
+      case 'lookout': { ctx.fillStyle = '#7a5a3a'; for (const px of [0.2, w / T - 0.3]) ctx.fillRect(sx + px * T, sy + 0.3 * T, 0.1 * T, 0.7 * T); box(ctx, sx, sy + 0.1 * T, w, 0.35 * T, 4, '#a07a52'); ctx.strokeStyle = INK; ctx.lineWidth = 2; for (let i = 0; i < 8; i++) { ctx.beginPath(); ctx.moveTo(sx + (0.1 + i * 0.25) * T, sy - 0.25 * T); ctx.lineTo(sx + (0.1 + i * 0.25) * T, sy + 0.1 * T); ctx.stroke(); } ctx.beginPath(); ctx.moveTo(sx, sy - 0.25 * T); ctx.lineTo(sx + w, sy - 0.25 * T); ctx.stroke();
+        box(ctx, sx + w / 2 - 0.12 * T, sy - 0.5 * T, 0.24 * T, 0.32 * T, 3, '#3d9be9', INK, 2); L(ctx, 'WHALES ↓', sx + w / 2, sy + 0.75 * T, T * 0.17, '#fff'); break; }
+      case 'bigthong': { box(ctx, sx + 0.2 * T, sy + 0.55 * T, w - 0.4 * T, 0.45 * T, 6, '#8f8f8a'); const tilt = ghost ? 0 : Math.sin(this.time * 0.8) * 0.04; ctx.save(); ctx.translate(sx + w / 2, sy + 0.2 * T); ctx.rotate(-0.35 + tilt);
+        ctx.beginPath(); ctx.ellipse(0, 0, 0.42 * T, 0.95 * T, 0, 0, Math.PI * 2); ctx.fillStyle = '#2d7a3e'; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = INK; ctx.stroke(); ctx.beginPath(); ctx.ellipse(0, 0.04 * T, 0.33 * T, 0.84 * T, 0, 0, Math.PI * 2); ctx.fillStyle = '#ffd34d'; ctx.fill();
+        ctx.strokeStyle = '#2b7fd1'; ctx.lineWidth = 0.12 * T; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(-0.32 * T, 0.1 * T); ctx.quadraticCurveTo(0, -0.55 * T, 0, -0.62 * T); ctx.quadraticCurveTo(0, -0.55 * T, 0.32 * T, 0.1 * T); ctx.stroke(); ctx.lineCap = 'butt'; circle(ctx, 0, -0.62 * T, 0.07 * T, '#2b7fd1', INK, 2); ctx.restore();
+        L(ctx, 'THE BIG THONG', sx + w / 2, sy + 0.82 * T, T * 0.19, '#fff3dc'); break; }
       case 'bigpie': { box(ctx, sx + 0.1 * T, sy + 0.45 * T, w - 0.2 * T, 0.55 * T, 6, '#8f8f8a'); ellipse(ctx, sx + w / 2, sy + 0.3 * T, 0.95 * T, 0.5 * T, '#d9a35b', INK, 4); ellipse(ctx, sx + w / 2, sy + 0.2 * T, 0.7 * T, 0.32 * T, '#e8bf7c', '#8a4a1c', 3);
         ctx.strokeStyle = '#8a4a1c'; ctx.lineWidth = 3; for (let i = -1; i <= 1; i++) { ctx.beginPath(); ctx.moveTo(sx + w / 2 + i * 0.25 * T, sy + 0.1 * T); ctx.lineTo(sx + w / 2 + i * 0.25 * T, sy + 0.3 * T); ctx.stroke(); }
         circle(ctx, sx + w / 2 + 0.3 * T, sy + 0.05 * T, 0.12 * T, '#d64b2a', INK, 2); // dollop of sauce
@@ -1109,6 +1318,9 @@ class Renderer {
   drawItem(x, y, type, s = 1) { const ctx = this.ctx, T = this.T * s;
     if (type === 'pie') { ellipse(ctx, x, y, 0.3 * T, 0.17 * T, '#d9a35b', '#6b3a14', 2); ellipse(ctx, x, y - 0.03 * T, 0.2 * T, 0.1 * T, '#e8bf7c', null); }
     else if (type === 'coffee') { box(ctx, x - 0.14 * T, y - 0.2 * T, 0.28 * T, 0.4 * T, 3, '#6b3e1e', INK, 2); box(ctx, x - 0.17 * T, y - 0.26 * T, 0.34 * T, 0.1 * T, 2, '#fff', INK, 2); ctx.strokeStyle = '#d64b2a'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(x + 0.05 * T, y - 0.26 * T); ctx.lineTo(x + 0.1 * T, y - 0.42 * T); ctx.stroke(); }
+    else if (type === 'choc') { box(ctx, x - 0.14 * T, y - 0.22 * T, 0.28 * T, 0.42 * T, 3, '#7a4a28', INK, 2); box(ctx, x - 0.14 * T, y - 0.22 * T, 0.28 * T, 0.13 * T, 3, '#f3e3c3', INK, 1.5); ctx.fillStyle = '#d64b2a'; ctx.fillRect(x - 0.08 * T, y - 0.02 * T, 0.16 * T, 0.08 * T); }
+    else if (type === 'dimsim') { ellipse(ctx, x, y, 0.22 * T, 0.16 * T, '#e9dcc0', '#8a6a3a', 2); ctx.strokeStyle = '#8a6a3a'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(x - 0.1 * T, y - 0.1 * T); ctx.lineTo(x, y + 0.02 * T); ctx.lineTo(x + 0.1 * T, y - 0.1 * T); ctx.stroke(); }
+    else if (type === 'fuel') { box(ctx, x - 0.17 * T, y - 0.24 * T, 0.34 * T, 0.44 * T, 3, '#d64b2a', INK, 2); ctx.fillStyle = 'rgba(0,0,0,0.25)'; ctx.fillRect(x - 0.17 * T, y - 0.1 * T, 0.34 * T, 0.04 * T); ctx.fillRect(x - 0.17 * T, y + 0.06 * T, 0.34 * T, 0.04 * T); circle(ctx, x + 0.08 * T, y - 0.2 * T, 0.03 * T, '#f3c623', null); }
     else { box(ctx, x - 0.27 * T, y - 0.11 * T, 0.54 * T, 0.22 * T, 7, '#c98a4a', '#6b3a14', 2); ctx.strokeStyle = '#f1d9a8'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(x - 0.15 * T, y - 0.04 * T); ctx.lineTo(x + 0.15 * T, y - 0.04 * T); ctx.stroke(); }
   }
   drawSprite(sp, sx, sy, sxScale = 1, syScale = 1) { this.ctx.drawImage(sp.cv, sx - sp.ax * sxScale, sy - sp.ay * syScale, sp.w * sxScale, sp.h * syScale); }
@@ -1136,8 +1348,38 @@ class Renderer {
   drawCar(c) { const ctx = this.ctx, T = this.T; const [cx, cy] = this.w2s(c.x, c.y); const south = !c.pass; const sp = this.carSprite(c.kind, c.color, south);
     const idle = c.state === 'fill' ? Math.sin(this.time * 40) * 0.6 : 0; ctx.drawImage(sp.cv, cx - sp.w / 2 + idle, cy - sp.h / 2, sp.w, sp.h);
     if (c.state !== 'fill' && Math.random() < (c.kind === 'roadtrain' ? 0.5 : 0.12)) this.spawnDust(c.x + (c.kind === 'roadtrain' ? 0.35 : 0.2), c.y - (south ? 1 : -1) * this.sim.carLen(c.kind) / 2, 0, south ? -0.6 : 0.6, 0.6, c.kind === 'roadtrain' ? '#555' : '#cfc6bb', c.kind === 'roadtrain' ? 0.2 : 0.1);
+    if (c.damaged) { if (Math.random() < 0.35) this.spawnDust(c.x + (Math.random() - 0.5) * 0.4, c.y + (south ? 0.5 : -0.5), (Math.random() - 0.5) * 0.3, -1.2, 0.9, 'rgba(90,90,90,0.8)', 0.14); ctx.strokeStyle = INK; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(cx - 0.2 * T, cy + 0.45 * T); ctx.lineTo(cx - 0.05 * T, cy + 0.35 * T); ctx.lineTo(cx + 0.1 * T, cy + 0.5 * T); ctx.stroke(); }
+    if (c.state === 'repair') { const prog = 1 - c.t / (c.total || 1), wait = c.wait / ECON.mechanic.wait; const bx = cx + 0.95 * T, by = cy - 0.3 * T; circle(ctx, bx, by, 0.3 * T, '#fff', wait < 0.3 ? '#d64b2a' : INK, 3); ctx.save(); ctx.translate(bx, by); ctx.rotate(c.fixing ? Math.sin(this.time * 20) * 0.5 : -0.6); ctx.strokeStyle = INK; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(-0.13 * T, 0.13 * T); ctx.lineTo(0.1 * T, -0.1 * T); ctx.stroke(); circle(ctx, 0.12 * T, -0.12 * T, 0.06 * T, '#bdbdbd', INK, 1.5); ctx.restore();
+      box(ctx, bx - 0.35 * T, by + 0.38 * T, 0.7 * T, 0.12 * T, 3, '#1a0d0a', INK, 2); ctx.fillStyle = '#4fb86a'; ctx.fillRect(bx - 0.35 * T, by + 0.38 * T, 0.7 * T * prog, 0.12 * T); ctx.fillStyle = wait < 0.3 ? '#d64b2a' : '#ffe27a'; ctx.fillRect(bx - 0.35 * T, by + 0.53 * T, 0.7 * T * wait, 4);
+      if (c.fixing && Math.random() < 0.3) this.spawnSparks(c.x + 0.3, c.y, 1, '#ffe27a'); }
     if (c.state === 'fill') { const prog = 1 - c.t / (c.total || 1); const L = this.sim.carLen(c.kind) * T; box(ctx, cx - 0.4 * T, cy - L / 2 - 0.3 * T, 0.8 * T, 0.14 * T, 3, '#1a0d0a', INK, 2); ctx.fillStyle = '#4fb86a'; ctx.fillRect(cx - 0.4 * T, cy - L / 2 - 0.3 * T, 0.8 * T * prog, 0.14 * T);
-      if (c.kind === 'roadtrain') pill(ctx, 'ROAD TRAIN ×' + ECON.roadTrainPay, cx, cy - L / 2 - 0.62 * T, Math.max(9, T * 0.17), '#d64b2a', '#fff', 6); } }
+      if (c.kind === 'roadtrain') pill(ctx, 'ROAD TRAIN ×' + ECON.roadTrainPay, cx, cy - L / 2 - 0.62 * T, Math.max(9, T * 0.17), '#d64b2a', '#fff', 6); if (c.kind === 'tanker') pill(ctx, 'UNLOADING', cx, cy - L / 2 - 0.62 * T, Math.max(9, T * 0.17), '#2d7a3e', '#fff', 6); } }
+  drawTank() { const ctx = this.ctx, T = this.T, sim = this.sim, tk = MAP.tank; const [sx, sy] = this.w2s(tk.x, tk.y); const f = sim.fuel / ECON.tank.cap, low = f < 0.2; const b = sim.bounce.tank || 0; const sc = 1 + 0.1 * Math.sin(b * Math.PI) * b;
+    ctx.save(); ctx.translate(sx + 0.5 * T, sy + T); ctx.scale(sc, 2 - sc); ctx.translate(-(sx + 0.5 * T), -(sy + T));
+    ellipse(ctx, sx + 0.5 * T, sy + 0.95 * T, 0.48 * T, 0.14 * T, 'rgba(0,0,0,0.25)', null); box(ctx, sx + 0.08 * T, sy + 0.05 * T, 0.84 * T, 0.88 * T, 8, '#dfe5ea'); box(ctx, sx + 0.3 * T, sy + 0.2 * T, 0.4 * T, 0.6 * T, 4, '#1a0d0a', INK, 2);
+    ctx.fillStyle = low ? (Math.sin(this.time * 8) > 0 ? '#d64b2a' : '#7a1f1f') : f < 0.45 ? '#f3c623' : '#4fb86a'; ctx.fillRect(sx + 0.33 * T, sy + 0.77 * T - 0.54 * T * f, 0.34 * T, 0.54 * T * f); ctx.restore();
+    pill(ctx, 'TANK ' + Math.round(sim.fuel) + '/' + ECON.tank.cap, sx + 0.5 * T, sy - 0.15 * T, Math.max(10, T * 0.17), low ? '#d64b2a' : INK, '#fff', 6); }
+  drawPriceBoard() { const ctx = this.ctx, T = this.T, sim = this.sim, pb = MAP.priceBoard; const [sx, sy] = this.w2s(pb.x, pb.y); const war = sim.event === 'pricewar'; ctx.fillStyle = '#6b6b6b'; ctx.fillRect(sx + 0.45 * T, sy + 0.4 * T, 0.1 * T, 0.6 * T);
+    box(ctx, sx - 0.05 * T, sy - 0.45 * T, 1.1 * T, 0.9 * T, 5, war && Math.sin(this.time * 10) > 0 ? '#ffe27a' : '#fff'); label(ctx, 'DIESEL', sx + 0.5 * T, sy - 0.27 * T, T * 0.15, INK, null); label(ctx, '$' + (2.09 + 0.1 * sim.upgrades.price).toFixed(2), sx + 0.5 * T, sy + 0.02 * T, T * 0.24, '#d64b2a', null); label(ctx, 'PIES ' + fmt(sim.price('pie')), sx + 0.5 * T, sy + 0.28 * T, T * 0.13, INK, null);
+    if (war) { const p = sim.pwHold / ECON.priceWarHold; const [qx, qy] = this.w2s(MAP.priceSpot.x, MAP.priceSpot.y); ctx.globalAlpha = 0.6 + 0.3 * Math.sin(this.time * 8); ellipse(ctx, qx, qy, 0.5 * T, 0.22 * T, '#ffe27a', INK, 2); ctx.globalAlpha = 1; box(ctx, qx - 0.4 * T, qy + 0.3 * T, 0.8 * T, 0.12 * T, 3, '#1a0d0a', INK, 2); ctx.fillStyle = '#4fb86a'; ctx.fillRect(qx - 0.4 * T, qy + 0.3 * T, 0.8 * T * p, 0.12 * T); } }
+  drawPete() { const ctx = this.ctx, T = this.T, sim = this.sim; const [sx, sy] = this.w2s(-4.6, 6.2); if (sx > this.W + T || sx + 5 * T < 0) return; const bust = sim.flags.peteBust, war = sim.event === 'pricewar';
+    box(ctx, sx, sy + 0.6 * T, 4.4 * T, 5.4 * T, 6, '#a59b8a', INK, 2); box(ctx, sx + 0.2 * T, sy + 1.2 * T, 2.6 * T, 3.6 * T, 6, bust ? '#7a7065' : '#c9b9a0'); for (let i = 0; i < 6; i++) { ctx.fillStyle = 'rgba(0,0,0,0.12)'; ctx.fillRect(sx + 0.2 * T, sy + (1.3 + i * 0.6) * T, 2.6 * T, 0.05 * T); }
+    box(ctx, sx + 0.1 * T, sy + 0.55 * T, 2.8 * T, 0.7 * T, 5, bust ? '#555' : '#7a2a8a'); label(ctx, bust ? 'CLOSED' : "PETE'S", sx + 1.5 * T, sy + 0.92 * T, T * 0.4, bust ? '#bbb' : '#ffe27a');
+    if (bust) { ctx.strokeStyle = '#8a5a3a'; ctx.lineWidth = 0.18 * T; for (let i = 0; i < 3; i++) { ctx.beginPath(); ctx.moveTo(sx + 0.4 * T, sy + (1.8 + i) * T); ctx.lineTo(sx + 2.6 * T, sy + (2.2 + i) * T); ctx.stroke(); } box(ctx, sx + 3.1 * T, sy + 3.6 * T, 1.1 * T, 0.7 * T, 4, '#fff'); label(ctx, 'FOR SALE', sx + 3.65 * T, sy + 3.95 * T, T * 0.15, '#d64b2a', null); return; }
+    box(ctx, sx + 3.4 * T, sy + 1.8 * T, 0.5 * T, 0.8 * T, 5, '#7d7f86'); box(ctx, sx + 3.4 * T, sy + 1.6 * T, 0.5 * T, 0.3 * T, 4, '#7a2a8a');
+    box(ctx, sx + 3.0 * T, sy - 0.4 * T, 1.3 * T, 0.9 * T, 5, war ? (Math.sin(this.time * 12) > 0 ? '#ffe27a' : '#fff') : '#fff'); label(ctx, war ? 'PIES $2!!' : 'DIESEL', sx + 3.65 * T, sy - 0.15 * T, T * 0.17, war ? '#d64b2a' : INK, null); label(ctx, war ? 'CHEAP AS!' : '$' + (2.39 + 0.1 * sim.upgrades.price).toFixed(2), sx + 3.65 * T, sy + 0.18 * T, T * 0.22, war ? INK : '#7a2a8a', null);
+    const sp = this.personSprite(LOOKS.pete, 1, war ? this.legFrame(this.time * 8, true) : 4, false); this.drawSprite(sp, sx + 3.2 * T + (war ? Math.sin(this.time * 3) * 0.4 * T : 0), sy + 4.6 * T);
+    if (war) this.queueBubble(-1.3, 9.4, ["Pies, two bucks! Come on!", "Cheaper than chips!", "Don't go to that clown!"][Math.floor(this.time / 3) % 3], 5); }
+  drawWhales() { const ctx = this.ctx, T = this.T; const t = this.time; for (const [wx, ph] of [[2, 0], [9.5, 7], [-4, 13]]) { const k = ((t + ph) % 20) / 20; if (k > 0.45) continue; const [sx, sy] = this.w2s(wx + k * 2, MAP.H + 3.4); if (sy < -T || sy > this.H + 2 * T) continue; const e = Math.sin(k / 0.45 * Math.PI);
+      ellipse(ctx, sx, sy, 0.9 * T * e + 2, 0.22 * T * e + 1, '#1f3b57', 'rgba(255,255,255,0.4)', 2); if (k > 0.1 && k < 0.3) { ctx.strokeStyle = 'rgba(255,255,255,' + (0.8 - (k - 0.1) * 3) + ')'; ctx.lineWidth = 4; for (const a of [-0.4, 0, 0.4]) { ctx.beginPath(); ctx.moveTo(sx - 0.3 * T, sy - 0.1 * T); ctx.lineTo(sx - 0.3 * T + Math.sin(a) * 0.4 * T, sy - 0.1 * T - (k - 0.1) * 6 * T); ctx.stroke(); } }
+      if (k > 0.32) { ctx.fillStyle = '#1f3b57'; ctx.beginPath(); ctx.moveTo(sx + 0.7 * T, sy); ctx.lineTo(sx + 1.1 * T, sy - 0.45 * T * e); ctx.lineTo(sx + 0.9 * T, sy - 0.1 * T); ctx.lineTo(sx + 0.6 * T, sy - 0.45 * T * e); ctx.closePath(); ctx.fill(); } } }
+  drawWombat(r) { const ctx = this.ctx, T = this.T; const [sx, sy] = this.w2s(r.x, r.y); if (sx < -2 * T || sx > this.W + 2 * T) return; const bob = Math.abs(Math.sin(r.hop * 3)) * 0.03 * T; ellipse(ctx, sx, sy, 0.38 * T, 0.1 * T, 'rgba(0,0,0,0.2)', null); ellipse(ctx, sx, sy - 0.25 * T - bob, 0.38 * T, 0.24 * T, '#8a7a6a'); circle(ctx, sx + r.dir * 0.32 * T, sy - 0.3 * T - bob, 0.15 * T, '#8a7a6a'); circle(ctx, sx + r.dir * 0.4 * T, sy - 0.32 * T - bob, 0.025 * T, INK, null); }
+  drawCamel(r) { const ctx = this.ctx, T = this.T; const [sx, sy] = this.w2s(r.x, r.y); if (sx < -3 * T || sx > this.W + 3 * T) return; const d = r.dir, st = Math.sin(r.hop * 3) * 0.08 * T; ellipse(ctx, sx, sy, 0.6 * T, 0.13 * T, 'rgba(0,0,0,0.2)', null); ctx.strokeStyle = '#a0784a'; ctx.lineWidth = 0.1 * T; for (const o of [-0.35, -0.15, 0.2, 0.4]) { ctx.beginPath(); ctx.moveTo(sx + o * T, sy - 0.6 * T); ctx.lineTo(sx + o * T + (o > 0 ? st : -st), sy); ctx.stroke(); }
+    ellipse(ctx, sx, sy - 0.75 * T, 0.6 * T, 0.25 * T, '#c9955a'); ellipse(ctx, sx - d * 0.05 * T, sy - 1.0 * T, 0.28 * T, 0.2 * T, '#c9955a'); ctx.strokeStyle = '#c9955a'; ctx.lineWidth = 0.14 * T; ctx.beginPath(); ctx.moveTo(sx + d * 0.5 * T, sy - 0.8 * T); ctx.quadraticCurveTo(sx + d * 0.75 * T, sy - 1.1 * T, sx + d * 0.8 * T, sy - 1.35 * T); ctx.stroke(); ellipse(ctx, sx + d * 0.88 * T, sy - 1.38 * T, 0.16 * T, 0.09 * T, '#c9955a'); }
+  drawFloorThong(th) { const ctx = this.ctx, T = this.T; const [sx, sy] = this.w2s(th.x, th.y); const bob = Math.sin(this.time * 5 + th.x * 3) * 3; ctx.globalAlpha = 0.5; ellipse(ctx, sx, sy + 2, 0.22 * T, 0.07 * T, '#000', null); ctx.globalAlpha = 1;
+    this.paintThong(ctx, sx, sy - 0.25 * T + bob, 0.55 * T, '#fff', '#2b7fd1', -0.4); if (Math.random() < 0.08) this.spawnSparks(th.x, th.y - 0.4, 1, '#ffe27a'); label(ctx, '?', sx + 0.25 * T, sy - 0.55 * T + bob, T * 0.24, '#ffe27a'); }
+  paintThong(ctx, x, y, size, col, strap, rot = 0) { ctx.save(); ctx.translate(x, y); ctx.rotate(rot); ctx.beginPath(); ctx.ellipse(0, 0, size * 0.36, size * 0.8, 0, 0, Math.PI * 2); ctx.fillStyle = col; ctx.fill(); ctx.lineWidth = Math.max(1.5, size * 0.07); ctx.strokeStyle = INK; ctx.stroke();
+    ctx.strokeStyle = strap; ctx.lineWidth = size * 0.13; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(-size * 0.28, size * 0.05); ctx.quadraticCurveTo(0, -size * 0.45, 0, -size * 0.5); ctx.quadraticCurveTo(0, -size * 0.45, size * 0.28, size * 0.05); ctx.stroke(); ctx.lineCap = 'butt'; ctx.restore(); }
   drawSeagull(g) { const ctx = this.ctx, T = this.T; const [sx, sy] = this.w2s(g.x, g.y); const flap = Math.sin(g.anim) * 0.2 * T; ellipse(ctx, sx, sy + 0.5 * T, 0.2 * T, 0.07 * T, 'rgba(0,0,0,0.15)', null);
     ctx.fillStyle = '#fff'; ctx.strokeStyle = INK; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(sx - 0.1 * T, sy); ctx.lineTo(sx - 0.55 * T, sy - 0.15 * T - flap); ctx.lineTo(sx - 0.2 * T, sy + 0.08 * T); ctx.closePath(); ctx.fill(); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(sx + 0.1 * T, sy); ctx.lineTo(sx + 0.55 * T, sy - 0.15 * T - flap); ctx.lineTo(sx + 0.2 * T, sy + 0.08 * T); ctx.closePath(); ctx.fill(); ctx.stroke();
@@ -1186,7 +1428,8 @@ class Renderer {
         const add = (wx, wy, r, a = 1) => { const [x, y] = this.w2s(wx, wy); const R = r * T; if (x < -R || y < -R || x > W + R || y > H + R) return; l.globalAlpha = a; l.drawImage(this.lightSprite, (x - R) * s, (y - R) * s, R * 2 * s, R * 2 * s); };
         for (const [x, y] of [[7.5, 4.5], [9.5, 4.5], [7.5, 7.5], [9.5, 7.5], [7.5, 10.5], [9.5, 10.5], [8.5, 14.5]]) add(x, y, 2.2, 0.9);
         add(9, 2.2, 2.6); add(6.2, 9.5, 1.6, 0.8);
-        for (const st of STATIONS) if (sim.built[st.id]) { if (st.kind === 'pump') add(st.x + 0.5, st.y + 0.3, 2.2); else if (st.kind === 'carwash') add(st.x + 1, st.y + 1, 2.4); else if (st.kind === 'bigpie') add(st.x + 1, st.y + 0.3, 2.4); else if (st.kind === 'billboard') add(st.x + 1, st.y - 0.4, 2.2); }
+        for (const st of STATIONS) if (sim.built[st.id]) { if (st.kind === 'pump') add(st.x + 0.5, st.y + 0.3, 2.2); else if (st.kind === 'carwash') add(st.x + 1, st.y + 1, 2.4); else if (st.kind === 'bigpie') add(st.x + 1, st.y + 0.3, 2.4); else if (st.kind === 'billboard') add(st.x + 1, st.y - 0.4, 2.2); else if (st.kind === 'mechanic' || st.kind === 'depot' || st.kind === 'lookout' || st.kind === 'bigthong') add(st.x + st.w / 2, st.y + 0.5, 2.3); }
+        if (MAP.tank) { add(MAP.tank.x + 0.5, MAP.tank.y + 0.5, 1.6); add(MAP.priceBoard.x + 0.5, MAP.priceBoard.y, 1.5); add(-1.3, 7, 2.2, sim.flags.peteBust ? 0 : 0.9); }
         add(sim.player.x, sim.player.y - 0.5, 1.7, 0.85);
         for (const c of sim.cars) { const L = sim.carLen(c.kind), d = c.pass ? -1 : 1; add(c.x, c.y + d * (L / 2 + 0.9), 1.3, 0.9); }
         l.globalAlpha = 1; l.globalCompositeOperation = 'source-over'; } }
@@ -1255,7 +1498,14 @@ class UI {
     $('btnReset').addEventListener('click', () => { const b = $('btnReset'); if (b.dataset.armed) { Save.clear(); game.resetting = true; location.reload(); return; } b.dataset.armed = '1'; b.textContent = 'Tap again to wipe it'; this.toast('Export a save code first if you want it back.'); setTimeout(() => { delete b.dataset.armed; b.textContent = 'Reset save'; }, 3500); });
     $('btnDouble').addEventListener('click', () => { if (!this.welcome) return; const w = this.welcome; game.sim.cash += w.cash; game.sim.totalEarned += w.cash; game.analytics.track('double_offline_tapped', { minutes_away: Math.round(w.seconds / 60), cash_earned: w.cash, doubled_to: w.cash * 2 }); game.audio.play('fanfare'); game.haptic([30, 30, 60]); game.renderer.spawnConfetti(80); this.welcome = null; this.close('welcome'); game.save(); });
     $('btnWelcomeClose').addEventListener('click', () => { this.welcome = null; this.close('welcome'); });
-    $('btnServo2').addEventListener('click', () => { game.sim.flags.servo2Tapped = (game.sim.flags.servo2Tapped || 0) + 1; game.analytics.track('servo2_tapped', { play_minutes: Math.round(game.sim.playTime / 60), total_earned: Math.floor(game.sim.totalEarned) }); game.audio.play('hire'); this.toast("Logged, legend. Servo #2 is on the way."); game.save(); });
+    $('btnServo2').addEventListener('click', () => { const nx = SERVO_ORDER[SERVO_ORDER.indexOf(SERVO.id) + 1];
+      if (nx) { game.analytics.track('servo2_tapped', { play_minutes: Math.round(game.sim.playTime / 60), total_earned: Math.floor(game.sim.totalEarned), to: nx }); this.close('complete'); game.startTravel(nx); return; }
+      game.sim.flags.servo3Tapped = (game.sim.flags.servo3Tapped || 0) + 1; game.analytics.track('servo3_tapped', { play_minutes: Math.round(game.sim.playTime / 60) }); game.audio.play('hire'); this.toast('Logged, legend. More servos are on the way.'); game.save(); });
+    $('btnMap').addEventListener('click', () => { game.audio.play('click'); this.openNetwork(); });
+    $('btnCloseNet').addEventListener('click', () => this.close('network'));
+    $('btnClosePc').addEventListener('click', () => this.close('postcard'));
+    $('btnSharePc').addEventListener('click', () => this.sharePostcard());
+    this.modalQueue = [];
     $('btnCompleteClose').addEventListener('click', () => this.close('complete'));
     $('sfxVol').addEventListener('input', e => { game.settings.sfx = e.target.value / 100; game.audio.setSfx(game.settings.sfx); game.audio.play('coin'); });
     $('musVol').addEventListener('input', e => { game.settings.music = e.target.value / 100; game.audio.setMusic(game.settings.music); });
@@ -1266,12 +1516,12 @@ class UI {
   syncSettings() { const s = this.g.settings; this.$('nameSet').value = s.name || ''; this.$('nameIn').value = s.name || ''; this.$('sfxVol').value = Math.round(s.sfx * 100); this.$('musVol').value = Math.round(s.music * 100); for (const [id, key] of [['tgHaptics', 'haptics'], ['tgArrow', 'arrow'], ['tgSpicy', 'spicy'], ['tgAnalytics', 'analytics']]) this.$(id).classList.toggle('on', !!s[key]); }
   anyOpen() { return !!document.querySelector('.modal.open'); }
   open(id) { this.$(id).classList.add('open'); } close(id) { this.$(id).classList.remove('open'); }
-  openSettings() { this.syncSettings(); const s = this.g.sim; this.el.statsLine.textContent = `v${VERSION} · played ${fmtTime(s.playTime)} · earned ${fmt(s.totalEarned)} · served ${s.stats.served} · lost ${s.stats.lost} · seagulls shooed ${s.stats.shooed}`; this.open('settings'); }
+  openSettings() { this.syncSettings(); const s = this.g.sim; this.el.statsLine.textContent = `v${VERSION} · ${SERVO.name} · thongs ${s.thongCount}/${THONGS.length} · played ${fmtTime(s.playTime)} · earned ${fmt(s.totalEarned)} · served ${s.stats.served} · lost ${s.stats.lost} · seagulls shooed ${s.stats.shooed}`; this.open('settings'); }
   openUpgrades() { this.renderUpgrades(); this.open('upgrades'); }
   renderUpgrades() { const s = this.g.sim; this.el.upgCash.textContent = fmt(s.cash); const list = this.el.upgList; list.innerHTML = '';
     for (const u of UPGRADES) { const lv = s.upgrades[u.id], cost = s.upgradeCost(u.id), maxed = lv >= u.max; const row = document.createElement('div'); row.className = 'upg';
       const fxv = UI.upgradeValue(s, u.id, lv), nxv = maxed ? '' : ' → <span class="nx">' + UI.upgradeValue(s, u.id, lv + 1) + '</span>';
-      row.innerHTML = `<div class="ico">${u.icon}</div><div class="info"><b>${u.name}</b><small>${fxv}${nxv} · ${u.blurb}.</small><span class="lv">${'●'.repeat(lv)}${'○'.repeat(u.max - lv)}</span></div>`;
+      row.innerHTML = `<div class="ico">${u.icon}</div><div class="info"><b>${u.name}${u.crew ? ' <span class="tag">CREW</span>' : ''}</b><small>${fxv}${nxv} · ${u.crew ? 'Follows you to every servo' : u.blurb}.</small><span class="lv">${'●'.repeat(lv)}${'○'.repeat(u.max - lv)}</span></div>`;
       const btn = document.createElement('button'); btn.className = 'btn' + (maxed ? ' ghost' : s.cash >= cost ? ' green' : ''); btn.textContent = maxed ? 'MAXED' : fmt(cost); btn.disabled = maxed || s.cash < cost;
       btn.addEventListener('click', () => { if (s.buyUpgrade(u.id)) { this.g.audio.play('build'); this.g.haptic(25); this.g.renderer.spawnConfetti(20, innerWidth / 2, innerHeight / 2); this.renderUpgrades(); this.g.save(); } });
       row.appendChild(btn); list.appendChild(row); } }
@@ -1279,18 +1529,89 @@ class UI {
     case 'walk': return (ECON.walkBase * (1 + 0.12 * lv)).toFixed(1) + ' m/s';
     case 'carry': return (ECON.carryBase + 2 * lv) + ' items';
     case 'station': return '×' + (1 + 0.15 * lv).toFixed(2) + ' speed';
-    case 'price': return 'pie ' + fmt(Math.round(ECON.makers.pie.price * (1 + 0.2 * lv) * (s.built.bigpie ? ECON.bigPieMult : 1)));
+    case 'price': return 'pie ' + fmt(Math.round(ECON.makers.pie.price * (1 + 0.2 * lv) * (s.built[SERVO.bigThing] ? ECON.bigPieMult : 1)));
     case 'staff': return '×' + (1 + 0.2 * lv).toFixed(1) + ' staff';
   } return ''; }
+  openNetwork() { this.renderNetList(); this.open('network'); this.netT = 0; this.g.analytics.track('network_opened', { servos: Object.keys(this.g.sim.world.unlocked).length }); }
+  renderNetList() { const s = this.g.sim, w = s.world, list = this.$('netList'); list.innerHTML = '';
+    const rowFor = (name, place, status, btnText, btnOn, onClick) => { const row = document.createElement('div'); row.className = 'srow'; row.innerHTML = `<div class="info"><b></b><small></small><small style="display:block"></small></div>`; row.querySelector('b').textContent = name; row.querySelectorAll('small')[0].textContent = place; row.querySelectorAll('small')[1].textContent = status;
+      const b = document.createElement('button'); b.className = 'btn' + (btnOn ? ' green' : ' ghost'); b.textContent = btnText; b.disabled = !btnOn; if (onClick) b.addEventListener('click', onClick); row.appendChild(b); list.appendChild(row); };
+    for (const id of SERVO_ORDER) { const def = SERVOS[id], here = id === SERVO.id, snap = w.others[id], open = !!w.unlocked[id];
+      const total = def.stations.filter(st => !st.meta).length; const built = here ? Object.keys(s.built).length : snap ? Object.keys(snap.built || {}).length : 0;
+      const status = !open ? 'Finish ' + SERVOS[SERVO_ORDER[SERVO_ORDER.indexOf(id) - 1]].name + ' to unlock' : here ? `You're here · ${built}/${total} built · ${fmt(s.offlineRate() * 60)}/min idle` : snap ? `${built}/${total} built · sending ${fmt((snap.rate || 0) * ECON.netShare * 60)}/min to you` : 'Brand new. Nothing built yet.';
+      rowFor((here ? '📍 ' : '') + def.name, def.place, status, here ? "You're here" : open ? 'Drive there' : 'Locked', open && !here, open && !here ? () => { this.close('network'); this.g.startTravel(id); } : null); }
+    for (const t of SERVO_TEASERS) rowFor(t.name, t.place, 'Coming soon.', 'Soon', false, null);
+    const bt = this.$('bigThings'); bt.innerHTML = ''; for (const id of SERVO_ORDER) { const d = document.createElement('div'); d.className = 'bt'; let pc = null; try { pc = localStorage.getItem('servoEmpire.postcard.' + id); } catch (e) { pc = null; }
+      if (w.bigThings[id] && pc) { const img = document.createElement('img'); img.src = pc; img.alt = SERVOS[id].bigThingName + ' postcard'; d.appendChild(img); img.addEventListener('click', () => { this.$('postcardImg').src = pc; this.$('postcardNote').textContent = SERVOS[id].bigThingName + ', ' + SERVOS[id].place + '.'; this.open('postcard'); }); }
+      else d.textContent = w.bigThings[id] ? SERVOS[id].bigThingName + ' ✔' : '? ' + (w.unlocked[id] ? SERVOS[id].bigThingName : 'Locked'); bt.appendChild(d); }
+    const tw = this.$('thongWall'); tw.innerHTML = ''; this.$('thongCount').textContent = s.thongCount + '/' + THONGS.length; this.$('thongNote').textContent = s.thongCount ? `+${s.thongCount}% prices at every servo. Happy customers drop them. Grab them before they're gone.` : 'Happy customers sometimes drop a thong. Walk over it to add it to the wall. Each new design is +1% prices everywhere.';
+    for (const t of THONGS) { const have = w.thongs[t.id]; const d = document.createElement('div'); d.className = 'th r' + t.r + (have ? '' : ' no'); const cv = document.createElement('canvas'); cv.width = 88; cv.height = 88; const c = cv.getContext('2d'); c.lineJoin = 'round';
+      if (have) this.g.renderer.paintThong(c, 44, 46, 46, t.col, t.strap, -0.35); else { c.globalAlpha = 0.5; this.g.renderer.paintThong(c, 44, 46, 46, '#9a8f7a', '#7a7065', -0.35); }
+      d.appendChild(cv); d.appendChild(document.createTextNode(have ? t.name + (have > 1 ? ' ×' + have : '') : t.r === 3 ? 'Legendary' : t.r === 2 ? 'Rare' : '???')); tw.appendChild(d); } }
+  drawNetMap(dt) { const cv = this.$('netMap'), c = cv.getContext('2d'), W = cv.width, H = cv.height, s = this.g.sim; this.netT = (this.netT || 0) + dt;
+    const P = (lon, lat) => [(lon - 111.5) / (155 - 111.5) * W, (lat + 9.5) / (-44.5 + 9.5) * H];
+    c.fillStyle = '#2a6f97'; c.fillRect(0, 0, W, H); c.strokeStyle = 'rgba(255,255,255,0.12)'; c.lineWidth = 2; for (let y = 20; y < H; y += 28) { c.beginPath(); c.moveTo(0, y + Math.sin(this.netT + y) * 3); c.lineTo(W, y + Math.sin(this.netT + y + 2) * 3); c.stroke(); }
+    const outline = [[113.4, -22], [114, -26.3], [115, -29.5], [115.7, -31.8], [115, -34.2], [117.9, -35.1], [119.5, -34.4], [121.9, -33.8], [123.5, -33.9], [126, -32.3], [129, -31.7], [131.2, -31.5], [134.2, -32.6], [135.6, -34.9], [137.4, -33.1], [137.9, -33.6], [137.6, -35.1], [138.5, -34.9], [138.5, -35.6], [140.3, -37.9], [141.6, -38.4], [143.7, -38.8], [144.9, -37.9], [146.3, -39.1], [147.8, -38], [149.9, -37.5], [150.2, -35.7], [151.3, -33.8], [152.5, -32.4], [153.6, -28.6], [153.1, -26], [151.9, -24.2], [150.8, -22.6], [149.4, -21.3], [147.4, -19.3], [146.3, -18.6], [145.9, -16.9], [145.4, -15.5], [144.5, -14.3], [143.5, -12.6], [142.5, -10.7], [141.6, -12.9], [141.5, -15.6], [140.8, -17.5], [139.3, -17.3], [137.7, -16.2], [135.9, -15], [135.5, -14.2], [136.8, -12.3], [135.8, -11.9], [133.9, -11.8], [132.6, -11.4], [131, -12.2], [130.2, -12.9], [129.5, -14.8], [128.2, -14.9], [127.4, -14], [126.1, -14.2], [124.4, -16.3], [123.6, -16.6], [122.2, -18], [121.2, -19.5], [119.1, -20], [117.4, -20.7], [116.7, -20.6], [114.7, -21.8]];
+    c.beginPath(); outline.forEach(([lo, la], i) => { const [x, y] = P(lo, la); i ? c.lineTo(x, y) : c.moveTo(x, y); }); c.closePath(); const lg = c.createLinearGradient(0, 0, 0, H); lg.addColorStop(0, '#d9733f'); lg.addColorStop(1, '#c9955a'); c.fillStyle = lg; c.fill(); c.lineWidth = 5; c.strokeStyle = '#2b1a14'; c.stroke();
+    c.beginPath(); [[144.6, -40.7], [148.3, -40.9], [148, -43.2], [146, -43.6], [145.2, -42.2]].forEach(([lo, la], i) => { const [x, y] = P(lo, la); i ? c.lineTo(x, y) : c.moveTo(x, y); }); c.closePath(); c.fillStyle = '#5d8a5a'; c.fill(); c.stroke();
+    const road = pts => { c.beginPath(); pts.forEach(([lo, la], i) => { const [x, y] = P(lo, la); i ? c.lineTo(x, y) : c.moveTo(x, y); }); c.lineWidth = 5; c.strokeStyle = '#3b3b45'; c.stroke(); c.setLineDash([8, 8]); c.lineWidth = 1.5; c.strokeStyle = '#f3c623'; c.stroke(); c.setLineDash([]); };
+    const stuart = [[130.8, -12.5], [132.3, -14.5], [133.4, -19.6], [133.9, -23.7], [134.6, -27], [134.7, -29], [136.5, -31.3], [137.8, -32.5], [138.6, -34.9]], eyre = [[137.8, -32.5], [135.8, -32.5], [133.7, -32.1], [128.9, -31.7], [125.4, -32.3], [121.8, -32.2], [121.2, -30.9], [116, -31.9]];
+    road(stuart); road(eyre);
+    const w = s.world; const pin = (lon, lat, name, state) => { const [x, y] = P(lon, lat); const pulse = state === 'here' ? 1 + 0.15 * Math.sin(this.netT * 5) : 1; c.save(); c.translate(x, y); c.scale(pulse, pulse);
+      c.fillStyle = state === 'locked' || state === 'soon' ? '#7a7065' : state === 'here' ? '#ffe27a' : '#4fb86a'; c.beginPath(); c.arc(0, -16, 13, Math.PI, 0); c.lineTo(0, 4); c.closePath(); c.fill(); c.lineWidth = 3; c.strokeStyle = '#2b1a14'; c.stroke(); c.fillStyle = '#2b1a14'; c.beginPath(); c.arc(0, -16, 5, 0, Math.PI * 2); c.fill(); c.restore();
+      c.font = '900 19px "Arial Rounded MT Bold",Arial,sans-serif'; c.textAlign = 'left'; c.lineWidth = 5; c.strokeStyle = '#2b1a14'; c.strokeText(name, x + 16, y - 10); c.fillStyle = state === 'soon' || state === 'locked' ? '#e8dcc6' : '#fff3dc'; c.fillText(name, x + 16, y - 10); };
+    // delivery trucks running between servos you own
+    const owned = SERVO_ORDER.filter(id => w.unlocked[id] && (id === SERVO.id || w.others[id]));
+    if (owned.length > 1) { const route = [[133.6, -23.2], [134.6, -27], [134.7, -29], [136.5, -31.3], [137.8, -32.5], [135.8, -32.5], [133.7, -32.1], [128.6, -31.6]].map(([lo, la]) => P(lo, la)); const segs = []; let tot = 0; for (let i = 1; i < route.length; i++) { const l = Math.hypot(route[i][0] - route[i - 1][0], route[i][1] - route[i - 1][1]); segs.push(l); tot += l; }
+      for (let k = 0; k < 3; k++) { let d = ((this.netT * 40 + k * tot / 3) % (tot * 2)); if (d > tot) d = tot * 2 - d; let i = 0; while (i < segs.length - 1 && d > segs[i]) { d -= segs[i]; i++; } const a = route[i], b = route[i + 1], t = Math.min(1, d / segs[i]); const x = a[0] + (b[0] - a[0]) * t, y = a[1] + (b[1] - a[1]) * t; c.fillStyle = '#d64b2a'; c.strokeStyle = '#2b1a14'; c.lineWidth = 2; c.fillRect(x - 7, y - 5, 14, 10); c.strokeRect(x - 7, y - 5, 14, 10); c.fillStyle = '#4fb86a'; c.fillRect(x - 3, y - 12, 6, 6); } }
+    for (const id of SERVO_ORDER) { const d = SERVOS[id]; pin(d.geo.lon, d.geo.lat, d.name.replace(' Roadhouse', '').replace(' Servo', ''), id === SERVO.id ? 'here' : w.unlocked[id] ? 'open' : 'locked'); }
+    for (const t of SERVO_TEASERS) pin(t.geo.lon, t.geo.lat, t.name + ' (soon)', 'soon'); }
+  makePostcard(servo) { const r = this.g.renderer, st = STATION_BY_ID[SERVO.bigThing]; if (!st || servo !== SERVO.id) return; const [sx, sy] = r.w2s(st.x + st.w / 2, st.y + 0.2); const d = r.dpr;
+    const W = 600, H = 400, cv = document.createElement('canvas'); cv.width = W; cv.height = H; const c = cv.getContext('2d'); // a DOM canvas so toDataURL is synchronous and the postcard opens before the finale screen c.fillStyle = '#fff3dc'; c.fillRect(0, 0, W, H);
+    const cw = Math.min(r.W, 380), ch = cw * 0.66, cx0 = clamp(sx - cw / 2, 0, r.W - cw), cy0 = clamp(sy - ch * 0.58, 0, r.H - ch); try { c.drawImage(this.g.canvas, cx0 * d, cy0 * d, cw * d, ch * d, 18, 18, 380, 250); } catch (e) { c.fillStyle = '#c9955a'; c.fillRect(18, 18, 380, 250); }
+    c.lineWidth = 4; c.strokeStyle = '#2b1a14'; c.strokeRect(18, 18, 380, 250);
+    c.save(); c.translate(208, 300); c.rotate(-0.04); const title = "G'DAY FROM " + (SERVO.id === 'nullarbor' ? 'THE NULLARBOR' : 'THE STUART HWY'); let fsz = 30; c.font = '900 30px "Arial Rounded MT Bold",Arial,sans-serif'; while (c.measureText(title).width > 380 && fsz > 16) { fsz -= 1; c.font = '900 ' + fsz + 'px "Arial Rounded MT Bold",Arial,sans-serif'; } c.textAlign = 'center'; c.lineWidth = 6; c.strokeStyle = '#2b1a14'; c.strokeText(title, 0, 0); c.fillStyle = '#ffd34d'; c.fillText(title, 0, 0); c.restore();
+    c.font = '700 17px Arial,sans-serif'; c.fillStyle = '#2b1a14'; c.textAlign = 'center'; c.fillText(SERVOS[servo].bigThingName + ' · ' + (this.g.settings.name ? this.g.settings.name + "'s " + SERVO.signWord.toLowerCase() : SERVO.name), 208, 338); c.fillText('Built in ' + fmtTime(this.g.sim.playTime) + ' · ' + fmt(this.g.sim.totalEarned) + ' earned', 208, 362);
+    c.strokeStyle = '#2b1a14'; c.lineWidth = 2; c.beginPath(); c.moveTo(422, 30); c.lineTo(422, 370); c.stroke(); c.setLineDash([6, 6]); c.strokeRect(480, 30, 92, 110); c.setLineDash([]); c.fillStyle = '#d64b2a'; c.fillRect(486, 36, 80, 98); c.fillStyle = '#fff3dc'; c.font = '900 14px Arial'; c.fillText('SERVO', 526, 70); c.fillText('EMPIRE', 526, 88); c.fillText('$1.10', 526, 118);
+    c.fillStyle = '#2b1a14'; c.font = 'italic 16px Georgia,serif'; c.textAlign = 'left'; ['Wish you were here.', 'The pies are hot,', 'the servo is legendary.', '', '— the crew'].forEach((ln, i) => c.fillText(ln, 440, 190 + i * 26));
+    let url = ''; try { url = cv.toDataURL('image/jpeg', 0.82); } catch (e) { url = ''; }
+    const show = u => { this.$('postcardImg').src = u; this.$('postcardNote').textContent = 'Saved to your Servo Network. Long-press it to save to your phone.'; try { localStorage.setItem('servoEmpire.postcard.' + servo, u); } catch (e) { /* storage full: postcard still shows */ } this.open('postcard'); this.g.audio.play('fanfare'); this.g.analytics.track('postcard_made', { servo }); };
+    if (url) show(url); }
+  sharePostcard() { const src = this.$('postcardImg').src; if (!src) return; this.g.analytics.track('postcard_shared', { servo: SERVO.id });
+    fetch(src).then(r => r.blob()).then(b => { const file = new File([b], 'servo-empire-postcard.jpg', { type: 'image/jpeg' }); if (navigator.canShare && navigator.canShare({ files: [file] })) return navigator.share({ files: [file], title: 'Servo Empire', text: 'Check out my servo. Pies, petrol and pure chaos.' }); throw new Error('no share'); })
+      .catch(() => this.toast('Long-press the postcard to save or share it.', 2600)); }
+  playTravel(to, done) { const ov = this.$('travel'), cv = this.$('travelCv'), txt = this.$('travelTxt'); const dpr = Math.min(devicePixelRatio || 1, 2); cv.width = innerWidth * dpr; cv.height = innerHeight * dpr; const c = cv.getContext('2d'); c.scale(dpr, dpr);
+    const W = innerWidth, H = innerHeight, km = Math.abs((SERVOS[to].km || 0) - (SERVO.km || 0)) || 1700; this.open('travel'); this.g.audio.play('engine'); this.g.audio.play('horn'); const t0 = performance.now(), dur = 3000; let swapped = false;
+    const frame = now => { const t = (now - t0) / 1000, k = Math.min(1, t * 1000 / dur); const g = c.createLinearGradient(0, 0, 0, H); g.addColorStop(0, '#ff8a3d'); g.addColorStop(0.55, '#b8336a'); g.addColorStop(1, '#2a1020'); c.fillStyle = g; c.fillRect(0, 0, W, H);
+      c.fillStyle = 'rgba(255,226,122,0.9)'; c.beginPath(); c.arc(W * 0.7, H * 0.55, Math.min(W, H) * 0.14, 0, Math.PI * 2); c.fill(); const hy = H * 0.62; c.fillStyle = to === 'nullarbor' ? '#d6bd8b' : '#b9502f'; c.fillRect(0, hy, W, H - hy);
+      for (let i = 0; i < 14; i++) { const x = ((i * 137 - t * 220) % (W + 200) + W + 200) % (W + 200) - 100; c.fillStyle = to === 'nullarbor' ? '#8fa39a' : '#9aa346'; c.beginPath(); c.ellipse(x, hy + 20 + (i % 3) * 18, 16, 8, 0, 0, Math.PI * 2); c.fill(); }
+      c.fillStyle = '#3b3b45'; c.fillRect(0, hy + 70, W, 70); c.fillStyle = '#f3c623'; for (let x = -((t * 520) % 90); x < W; x += 90) c.fillRect(x, hy + 102, 46, 6);
+      const ux = W * 0.32, uy = hy + 92 + Math.sin(t * 22) * 2; c.fillStyle = 'rgba(0,0,0,0.3)'; c.beginPath(); c.ellipse(ux + 60, uy + 40, 80, 10, 0, 0, Math.PI * 2); c.fill(); box(c, ux, uy, 130, 34, 8, '#2e8bd8'); box(c, ux + 70, uy - 26, 54, 30, 6, '#2e8bd8'); box(c, ux + 78, uy - 20, 38, 18, 4, '#9fd8ff', INK, 2); box(c, ux + 6, uy - 12, 56, 14, 3, '#ffe27a', INK, 2);
+      for (const wx of [ux + 26, ux + 104]) { circle(c, wx, uy + 34, 13, '#222', INK, 3); c.save(); c.translate(wx, uy + 34); c.rotate(t * 20); c.fillStyle = '#bbb'; c.fillRect(-2, -9, 4, 18); c.restore(); }
+      for (let i = 0; i < 4; i++) { c.fillStyle = 'rgba(230,200,160,' + (0.5 - i * 0.1) + ')'; c.beginPath(); c.arc(ux - 10 - i * 22 - (t * 60 % 22), uy + 30 - i * 4, 8 + i * 4, 0, Math.PI * 2); c.fill(); }
+      txt.textContent = k < 0.85 ? `Hitting the road to ${to === 'nullarbor' ? 'the Nullarbor' : SERVOS[to].name}… ${Math.round(km * (1 - k)).toLocaleString('en-AU')} km to go` : (to === 'nullarbor' ? 'The Nullarbor. 146 km of dead straight road.' : SERVOS[to].name);
+      if (k >= 0.85 && !swapped) { swapped = true; done(); }
+      if (k < 1) requestAnimationFrame(frame); else { this.close('travel'); this.g.renderer.flash = 1; } };
+    requestAnimationFrame(frame); }
   banner(text, ms = 3500) { this.el.banner.textContent = text; this.el.banner.classList.add('show'); this.bannerT = ms / 1000; }
   toast(text, ms = 2600) { this.el.toast.textContent = text; this.el.toast.classList.add('show'); this.toastT = ms / 1000; }
   showWelcome(r) { const s = this.g.sim; this.welcome = r; s.cash += r.cash; s.totalEarned += r.cash; this.countFrom = 0; this.countT = 0; this.countTarget = r.cash;
     this.$('welcomeAway').textContent = `You were gone ${fmtTime(r.seconds)}${r.capped ? ' (earnings cap at 2 hours)' : ''}.`;
     const staff = Object.keys(s.staff).map(k => STAFF_INFO[k].name.split(' ')[0]); const eff = Math.round((ECON.offlineBase + ECON.offlinePerStaff * s.staffCount) * 100);
     this.$('welcomeLine').textContent = staff.length ? `${staff.join(', ')} kept the place ticking over at ${eff}% while you were off. Smoko was long.` : `No staff yet, so the pumps did what they could at ${eff}%. Hire Gav and Val for more.`;
+    if (r.network > 0) this.$('welcomeLine').textContent += ` Includes ${fmt(r.network)} trucked in from your other servos.`;
     this.$('welcomeNum').textContent = '$0'; this.open('welcome'); this.g.audio.play('chaching'); }
-  showComplete() { const s = this.g.sim; this.$('completeNum').textContent = fmt(s.totalEarned); this.$('completeLine').textContent = `${fmtTime(s.playTime)} of active play · ${s.stats.served} served · ${s.stats.cars} cars · ${s.stats.shooed} seagulls shooed`; this.open('complete'); this.g.renderer.spawnConfetti(220); this.g.audio.play('fanfare'); this.g.haptic([50, 40, 50, 40, 120]); }
+  queueModal(fn) { this.modalQueue.push(fn); }
+  showComplete() { const s = this.g.sim; const nx = SERVO_ORDER[SERVO_ORDER.indexOf(SERVO.id) + 1];
+    this.$('completeTitle').textContent = SERVO.id === 'nullarbor' ? '🩴 NULLARBOR LEGEND' : '🥧 SERVO LEGEND';
+    this.$('completeText').textContent = SERVO.id === 'nullarbor' ? 'The Big Thong towers over the Bight. Petrol Pete is selling his ute. Your network ships cash round the clock.' : 'Every pad built. The Big Pie stands proud. Grey nomads are weeping with joy.';
+    this.$('btnServo2').firstChild.textContent = nx ? 'HIT THE ROAD ' : 'MORE SERVOS '; this.$('btnServo2Sub').textContent = nx ? 'to ' + (nx === 'nullarbor' ? 'the Nullarbor' : SERVOS[nx].name) + '. This servo keeps earning for you.' : '(coming soon: UFO Roadhouse, Opal Dugout)'; this.$('completeNum').textContent = fmt(s.totalEarned); this.$('completeLine').textContent = `${fmtTime(s.playTime)} of active play · ${s.stats.served} served · ${s.stats.cars} cars · ${s.stats.shooed} seagulls shooed`; this.open('complete'); this.g.renderer.spawnConfetti(220); this.g.audio.play('fanfare'); this.g.haptic([50, 40, 50, 40, 120]); }
   tick(dt) { const s = this.g.sim; const r = this.g.renderer;
+    if (this.modalQueue.length && !this.anyOpen()) this.modalQueue.shift()();
+    const nb = !!SERVO.rival; if (nb !== this.servoBarOn) { this.servoBarOn = nb; this.$('servoBar').style.display = nb ? '' : 'none'; }
+    if (nb) { const fp = this.$('fuelPill'); const t = 'TANK ' + Math.round(s.fuel) + '/' + ECON.tank.cap; if (t !== this.lastFuel) { this.lastFuel = t; fp.textContent = t; fp.classList.toggle('low', s.fuel < ECON.tank.cap * 0.2); } this.$('rivalBar').style.width = Math.round(s.share * 100) + '%'; }
+    const showMap = Object.keys(s.world.unlocked).length > 1 || !!s.flags.mapComplete; if (showMap !== this.mapOn) { this.mapOn = showMap; this.$('btnMap').style.display = showMap ? '' : 'none'; }
+    if (this.$('network').classList.contains('open')) this.drawNetMap(dt);
     // rolling wallet: the number counts toward the real total instead of jumping
     if (this.shownCash === undefined || Math.abs(s.cash - this.shownCash) > s.cash * 0.5 + 500) this.shownCash = s.cash; else this.shownCash += (s.cash - this.shownCash) * Math.min(1, dt * 9);
     if (Math.abs(this.shownCash - s.cash) < 1) this.shownCash = s.cash; const cash = Math.floor(this.shownCash); if (cash !== this.lastCash) { this.lastCash = cash; this.el.cash.textContent = fmt(cash); }
@@ -1319,14 +1640,25 @@ class UI {
       case 'pad': a.play('pad'); { const p = g.sim.player; r.spawnNote(p.x, p.y - 1.3, f.x, f.y); r.spawnNote(p.x, p.y - 1.2, f.x, f.y); } r.spawnSparks(f.x + (Math.random() - 0.5), f.y + (Math.random() - 0.5), 2, '#4fb86a'); break;
       case 'build': { const st = STATION_BY_ID[f.id]; a.play('whoosh'); setTimeout(() => { a.play('thud'); a.play(st.kind === 'hire' ? 'hire' : 'build'); }, 230); g.haptic([30, 30, 60]); g.hitstop(0.22); r.onBuild(f.id); const [sx, sy] = r.w2s(f.x, f.y); r.spawnConfetti(70, sx, sy); r.flash = 0.6; if (st.kind !== 'hire') this.toast('🎉 Built: ' + st.name + '. ' + st.blurb, 3200); if (f.id === 'office') { this.toast('🛠️ Back Office open. Walk in or tap the spanner for upgrades.', 3600); } this.el.stickHint.style.opacity = '0'; break; }
       case 'hire': { const info = STAFF_INFO[f.staff]; this.toast('🤝 Hired ' + info.name + ': ' + info.job + '.', 4000); break; }
-      case 'event': a.rush = f.kind === 'rush'; if (f.kind === 'rush') { this.banner('🛻 TRADIE RUSH! Ute convoy inbound. Customers ×2 for 30 seconds!', 4500); a.play('horn'); } else if (f.kind === 'ibis') { this.banner('🗑️ BIN CHICKEN RAID! Ibis are eating your cash piles. Run \'em off!', 4500); a.play('ibis'); } else { this.banner('🐦 SEAGULL RAID! Walk into the gulls before they nick the pies!', 4500); a.play('squawk'); } g.haptic([40, 30, 40]); break;
-      case 'eventEnd': a.rush = false; if (f.kind === 'ibis') this.banner('Bin chickens gone. ' + (g.sim.stats.eaten > 1 ? 'They scoffed ' + fmt(g.sim.stats.eaten) + ' all-time, the mongrels.' : 'Not a cent lost!'), 2500); else if (f.kind === 'rush') this.banner('Rush over. Count the cash, legend.', 2200); else this.banner('Gulls gone. ' + (g.sim.stats.stolen ? 'Cheeky buggers.' : 'Not a single pie lost!'), 2200); break;
+      case 'event': a.rush = f.kind === 'rush'; if (f.kind === 'rush') { this.banner(SERVO.id === 'nullarbor' ? '🚐 GREY NOMAD CONVOY! Caravans everywhere for 30 seconds!' : '🛻 TRADIE RUSH! Ute convoy inbound. Customers ×2 for 30 seconds!', 4500); a.play('horn'); }
+        else if (f.kind === 'pricewar') { this.banner("💸 PRICE WAR! Pete's flogging $2 pies. Stand on your price board to match him!", 4500); a.play('horn'); } else if (f.kind === 'ibis') { this.banner('🗑️ BIN CHICKEN RAID! Ibis are eating your cash piles. Run \'em off!', 4500); a.play('ibis'); } else { this.banner('🐦 SEAGULL RAID! Walk into the gulls before they nick the pies!', 4500); a.play('squawk'); } g.haptic([40, 30, 40]); break;
+      case 'eventEnd': a.rush = false; if (f.kind === 'pricewar') { if (f.won) { this.banner('Price matched! Pete\'s customers walk across the road to you.', 2800); a.play('fanfare'); r.spawnConfetti(40); } else this.banner('Pete won that round. Highway share dropped.', 2600); } else if (f.kind === 'ibis') this.banner('Bin chickens gone. ' + (g.sim.stats.eaten > 1 ? 'They scoffed ' + fmt(g.sim.stats.eaten) + ' all-time, the mongrels.' : 'Not a cent lost!'), 2500); else if (f.kind === 'rush') this.banner('Rush over. Count the cash, legend.', 2200); else this.banner('Gulls gone. ' + (g.sim.stats.stolen ? 'Cheeky buggers.' : 'Not a single pie lost!'), 2200); break;
       case 'shoo': a.play(f.ibis ? 'ibis' : 'squawk'); r.spawnPopup(f.x, f.y, f.ibis ? (f.by === 'shazza' ? 'SHAZZA: GARN!' : 'GET OUT, BIN CHOOK!') : 'SHOO!', '#fff', 16); r.shake(3); g.haptic(20); for (let i = 0; i < 6; i++) r.spawnSparks(f.x, f.y - 0.5, 1, '#fff'); break;
       case 'steal': a.play('squawk'); r.spawnPopup(f.x, f.y, '-1 pie', '#d64b2a', 14); break;
       case 'lost': a.play('sad'); r.spawnPopup(f.x, f.y, 'lost sale', '#d64b2a', 12); break;
       case 'office': if (!this.anyOpen()) { a.play('click'); this.openUpgrades(); } break;
       case 'upgrade': break;
-      case 'complete': this.showComplete(); break;
+      case 'complete': setTimeout(() => this.queueModal(() => this.showComplete()), 1600); break;
+      case 'bigthing': setTimeout(() => this.queueModal(() => this.makePostcard(f.servo)), 1100); break;
+      case 'travel': r.onServoChange(); this.lastGoal = null; this.banner(f.fresh ? '🛣️ Welcome to ' + SERVO.name + '! Your crew skills came along. Build it up.' : '🛣️ Back at ' + SERVO.name + '.', 3500); break;
+      case 'delivery': a.play('truck'); this.toast('🚛 Network delivery: ' + fmt(f.amount) + ' at the drop-off. Grab it!', 3000); { const pp = STATION_BY_ID.network.pile; r.spawnPopup(pp.x, pp.y, '+' + fmt(f.amount), '#4fb86a', 15); } break;
+      case 'dry': a.play('sad'); r.spawnPopup(f.x, f.y, 'TANK DRY!', '#d64b2a', 15); if (!this.dryT || performance.now() - this.dryT > 8000) { this.dryT = performance.now(); this.banner('⛽ The tank\'s dry! Carry fuel drums from the depot to the tank.', 3000); } break;
+      case 'repaired': a.play('chaching'); r.spawnPopup(f.x, f.y, '+' + fmt(f.amount) + ' repair', '#4fb86a', 15); g.haptic(20); break;
+      case 'unfixed': a.play('sad'); r.spawnPopup(f.x, f.y, 'missed repair', '#d64b2a', 13); break;
+      case 'tanker': a.play('truck'); this.toast('⛽ Tanker dropped ' + f.drums + ' fuel drums at the depot.', 2600); break;
+      case 'peteBust': a.play('fanfare'); this.banner("🏆 PETROL PETE'S GONE BUST! The highway is yours.", 5000); r.spawnConfetti(160); r.shake(8); g.haptic([60, 40, 60, 40, 140]); break;
+      case 'thongDrop': r.spawnPopup(f.x, f.y - 0.5, 'dropped a thong!', '#ffe27a', 13); break;
+      case 'thong': { const t = THONG_BY_ID[f.id]; if (f.isNew) { a.play('fanfare'); this.banner('🩴 NEW THONG: ' + t.name + (t.r === 3 ? ' (LEGENDARY)' : t.r === 2 ? ' (RARE)' : '') + '! +1% prices everywhere. ' + g.sim.thongCount + '/' + THONGS.length, 3500); r.spawnConfetti(t.r === 3 ? 120 : 40); } else { a.play('coin'); this.toast('Another ' + t.name + ' for the pile.', 1800); } g.haptic(25); break; }
     } }
 }
 
@@ -1349,7 +1681,7 @@ class Game {
     this.analytics.track('session_start', { returning: this.returning, version: VERSION, viewport_w: innerWidth, viewport_h: innerHeight, touch: 'ontouchstart' in window, stations_built: Object.keys(this.sim.built).length });
   }
   resize() { this.renderer.resize(innerWidth, innerHeight, devicePixelRatio || 1); }
-  loadData(data) { this.sim.load(data); if (data.settings) Object.assign(this.settings, data.settings); this.settings.name = Game.cleanName(this.settings.name); this.sim.spicy = this.settings.spicy; if (this.renderer) { this.renderer.arrowOn = this.settings.arrow; this.renderer.servoName = this.settings.name; } this.audio.setSfx(this.settings.sfx); this.audio.setMusic(this.settings.music); }
+  loadData(data) { this.sim.load(data); if (this.renderer) this.renderer.onServoChange(); if (data.settings) Object.assign(this.settings, data.settings); this.settings.name = Game.cleanName(this.settings.name); this.sim.spicy = this.settings.spicy; if (this.renderer) { this.renderer.arrowOn = this.settings.arrow; this.renderer.servoName = this.settings.name; } this.audio.setSfx(this.settings.sfx); this.audio.setMusic(this.settings.music); }
   static cleanName(n) { return String(n || '').replace(/[^\p{L}\p{N} .'-]/gu, '').replace(/\s+/g, ' ').trim().slice(0, 14); }
   setName(n) { const clean = Game.cleanName(n); const changed = clean !== this.settings.name; this.settings.name = clean; this.renderer.servoName = clean; if (changed && clean) this.analytics.track('servo_named', { named: true }); }
   adaptQuality() { // dynamic resolution: trade pixel density for frame rate on slow devices, recover when there's headroom
@@ -1357,6 +1689,7 @@ class Game {
     if (fps < 48) { this.lowQ = (this.lowQ || 0) + 1; this.highQ = 0; } else if (fps >= 58) { this.highQ = (this.highQ || 0) + 1; this.lowQ = 0; } else { this.lowQ = 0; this.highQ = 0; }
     const base = Math.min(devicePixelRatio || 1, 2); if (this.lowQ >= 2 && r.dpr > 1.01) { r.dprScale = Math.max(1 / base, r.dprScale - 0.2); this.lowQ = 0; this.resize(); this.lastDrop = performance.now(); }
     else if (this.highQ >= 10 && r.dprScale < 1 && performance.now() - (this.lastDrop || 0) > 30000) { r.dprScale = Math.min(1, r.dprScale + 0.2); this.highQ = 0; this.resize(); } }
+  startTravel(id) { if (!this.sim.canTravel(id) || this.travelling) return; this.travelling = true; this.save(); this.ui.playTravel(id, () => { this.sim.travel(id); for (const f of this.sim.fx) this.ui.handleFx(f); this.sim.fx.length = 0; this.save(); this.travelling = false; }); }
   hitstop(sec) { this.slowmo = Math.max(this.slowmo, sec); }
   saveData() { const d = this.sim.toJSON(); d.settings = this.settings; return d; }
   save() { if (this.resetting) return false; return Save.write(this.saveData()); }
@@ -1367,7 +1700,7 @@ class Game {
     if (this.returning) this.handleReturn(this.pendingAway);
     this.last = performance.now(); requestAnimationFrame(ts => this.loop(ts));
   }
-  handleReturn(awaySec) { if (!(awaySec >= 60)) return; const r = this.sim.offlineEarnings(awaySec); this.analytics.track('offline_return', { minutes_away: Math.round(Math.min(awaySec, ECON.offlineCapSec) / 60), minutes_away_raw: Math.round(awaySec / 60), cash_earned: r.cash, capped: r.capped, staff: this.sim.staffCount });
+  handleReturn(awaySec) { if (!(awaySec >= 60)) return; const r = this.sim.offlineEarnings(awaySec); this.analytics.track('offline_return', { minutes_away: Math.round(Math.min(awaySec, ECON.offlineCapSec) / 60), minutes_away_raw: Math.round(awaySec / 60), cash_earned: r.cash, capped: r.capped, staff: this.sim.staffCount, network_cash: r.network || 0, servo: SERVO.id });
     if (r.cash > 0) this.ui.showWelcome(r); this.save(); }
   onHide() { if (this.hiddenAt !== null) return; this.hiddenAt = Date.now(); this.paused = true; this.save(); if (this.audio.ctx) this.audio.ctx.suspend(); }
   onShow() { if (this.hiddenAt === null) return; const away = (Date.now() - this.hiddenAt) / 1000; this.hiddenAt = null; this.paused = false; this.last = performance.now(); this.acc = 0; this.audio.resume(); if (this.started) this.handleReturn(away); }
@@ -1390,7 +1723,8 @@ class Game {
     requestAnimationFrame(t => this.loop(t));
   }
 }
-globalThis.ServoEmpire = { Sim, ECON, UPGRADES, STATIONS, STATION_BY_ID, ORDER, MAP, Save, fmt, fmtNum, fmtTime, RNG, Grid, LINES, SAVE_VERSION, VERSION, Analytics, Pool };
+globalThis.ServoEmpire = { Sim, ECON, UPGRADES, SERVOS, SERVO_ORDER, useServo, Save, fmt, fmtNum, fmtTime, RNG, Grid, LINES, SAVE_VERSION, VERSION, Analytics, Pool,
+  get STATIONS() { return STATIONS; }, get STATION_BY_ID() { return STATION_BY_ID; }, get ORDER() { return ORDER; }, get MAP() { return MAP; }, get SERVO() { return SERVO; }, get ITEMS() { return ITEMS; } };
 if (!HEADLESS) { window.addEventListener('DOMContentLoaded', () => { window.__servo = new Game(); }); if (document.readyState !== 'loading') { window.__servo = window.__servo || new Game(); } }
 </script>
 </body>

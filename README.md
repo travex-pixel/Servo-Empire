@@ -32,6 +32,25 @@ Open `index.html` in any modern browser, or host it (see below). Tap **OPEN UP, 
 - **Road trains** occasionally pull into a pump and pay four times as much.
 - **Day and night**: a full cycle every 6 minutes of play, with the neon sign, pump lights and headlights coming on after dark.
 - **Name your servo** on the start screen or in Settings. The sign and billboard use it.
+
+### Servo #2: The Nullarbor (unlocks when you finish the first servo)
+
+Finish every pad at the Stuart Hwy servo and hit the road 1,700 km to the **Long Straight Roadhouse** on the Eyre Highway.
+Your first servo keeps running and trucks a share of its earnings to you.
+
+- **Fuel tank:** every car drinks from one tank. The tanker drops fuel drums at the depot; carry them up to the tank (or hire **Tanker Trev**). Let it run dry and drivers go across the road.
+- **Roos at night:** after dark, roo-damaged cars limp into the **Mechanic Bay**. Stand next to them to fix them for big money, or hire **Mick the Mechanic**.
+- **Petrol Pete** runs the servo across the highway. Fast service and full tanks win you **Highway Share** (more traffic); lost customers and dry pumps give it back. Push him out of business.
+- **Price War:** Pete drops his prices. Run to your price board and stand on it to match him.
+- **Grey Nomad Convoy:** caravans everywhere for 30 seconds.
+- Whale Lookout, Bunda Cliffs, wombats and camels, and **The Big Thong** as the finale.
+
+### The Servo Network (🗺️ button)
+
+- A map of Australia with your servos, the highways between them and the delivery trucks running cash.
+- **Crew skills** (walk speed, carry, staff speed) follow you to every servo. Station speed and prices are per servo.
+- **Big Things:** each finished servo makes a postcard of its Big Thing you can share.
+- **Thong Wall:** happy customers sometimes drop a thong. Collect all 16 designs (common, rare, legendary); each new one is +1% prices everywhere. Found by playing only, never sold.
 - Settings (⚙️): sound and music sliders, haptics, guide arrow, spicy language, anonymous analytics on/off, save code export/import, reset.
 
 ## Host it on GitHub Pages
@@ -40,6 +59,8 @@ Open `index.html` in any modern browser, or host it (see below). Tap **OPEN UP, 
 2. On GitHub: **Settings → Pages → Build and deployment → Source: "Deploy from a branch"**.
 3. Pick your branch (e.g. `main`) and the **/ (root)** folder. Save.
 4. Wait a minute, then share `https://<your-username>.github.io/<repo-name>/`.
+
+The share preview card (`og-image.png`) and icons are already wired to `https://travex-pixel.github.io/Servo-Empire/`. If you host somewhere else, change the `og:url`, `og:image` and `twitter:image` tags at the top of `index.html` to your address. Players can also use **Add to Home Screen** for a full-screen app icon.
 
 Nothing else is needed: there is no build, and the game has no server-side parts. Saves live in each player's browser.
 
@@ -63,6 +84,8 @@ node tests/sim.test.js      # economy bots (efficient + lazy, 3 seeds), offline 
 node tests/browser.test.js  # Playwright: 390x844 + 1440x900, simulated input, screenshots to docs/screenshots, fails on console errors
 node tests/quick.js         # one quick bot run per policy with income rates between unlocks
 ```
+
+`tests/campaign.js` plays both servos back to back with a bot and prints the unlock timeline.
 
 The browser test needs `playwright` and a Chromium it can launch (`npx playwright install chromium` if you don't have one).
 

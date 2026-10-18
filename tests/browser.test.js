@@ -55,14 +55,29 @@ async function run() {
     const welcomeShown = await page.evaluate(() => document.getElementById('welcome').classList.contains('open'));
     await page.click('#btnDouble'); await sleep(300);
     await page.evaluate(() => { window.__servo.sim.cash = 12000; window.__servo.bot = true; });
-    let complete = { open: false, all: false }; for (let i = 0; i < 30 && !complete.open; i++) { await sleep(1000); complete = await page.evaluate(() => ({ open: document.getElementById('complete').classList.contains('open'), all: window.__servo.sim.allBuilt() })); }
+    let complete = { open: false, all: false }; for (let i = 0; i < 45 && !complete.open; i++) { await sleep(1000); if (await page.evaluate(() => document.getElementById('postcard').classList.contains('open'))) { await page.screenshot({ path: path.join(OUT, `${vp.name}-08b-postcard.png`) }); await page.click('#btnClosePc'); } complete = await page.evaluate(() => ({ open: document.getElementById('complete').classList.contains('open'), all: window.__servo.sim.allBuilt() })); }
     await page.screenshot({ path: path.join(OUT, `${vp.name}-08-complete.png`) });
-    if (complete.open) { await page.click('#btnServo2'); await sleep(200); }
+    const postcardSeen = await page.evaluate(() => !!localStorage.getItem('servoEmpire.postcard.outback'));
+    if (complete.open) { await page.click('#btnCompleteClose'); await sleep(200); }
     const finalEvents = await page.evaluate(() => window.__servo.analytics.buffer.map(e => e.event + ' ' + JSON.stringify(e.props)));
+    // 5b) Servo #2: travel to the Nullarbor and play its scenes
+    if (complete.open) { await page.click('#btnCompleteClose').catch(() => {}); }
+    await page.evaluate(() => { for (const m of document.querySelectorAll('.modal.open')) m.classList.remove('open'); });
+    await page.evaluate(() => { const s = window.__servo.sim; s.flags.mapComplete = true; s.world.unlocked.nullarbor = true; window.__servo.bot = false; window.__servo.startTravel('nullarbor'); });
+    await sleep(1400); await page.screenshot({ path: path.join(OUT, `${vp.name}-10-roadtrip.png`) }); await sleep(2600);
+    const nb = await page.evaluate(() => ({ servo: ServoEmpire.SERVO.id, crewWalk: window.__servo.sim.upgrades.walk, net: Math.round(window.__servo.sim.networkRate() * 60) }));
+    await page.evaluate(() => { window.__servo.bot = true; }); await sleep(15000); await page.screenshot({ path: path.join(OUT, `${vp.name}-11-nullarbor-start.png`) });
+    await page.evaluate(() => { const g = window.__servo, s = g.sim; g.bot = false; const d = s.toJSON(); for (const id of ['pump1', 'pie', 'counter', 'depot', 'pump2', 'choc', 'office', 'trev', 'val', 'mechanic', 'gav', 'dimsim']) d.built[id] = true; d.cash = 5000; d.player = { x: 3.6, y: 3.8 }; g.loadData(d); s.time = 210; s.chaosT = 1e9; s.carT.mechanic = 0; for (let i = 0; i < 6; i++) s.spawnCustomer(); s.floorThongs.push({ x: 8.4, y: 7.3, t: 0 }); });
+    await sleep(4000); await page.screenshot({ path: path.join(OUT, `${vp.name}-12-nullarbor-night.png`) });
+    await page.evaluate(() => { const s = window.__servo.sim; s.time = 30; const p = s.rng.pick; s.rng.pick = a => a.includes('pricewar') ? 'pricewar' : p.call(s.rng, a); s.startEvent(); s.rng.pick = p; window.__servo.bot = true; });
+    await sleep(4500); await page.screenshot({ path: path.join(OUT, `${vp.name}-13-pricewar.png`) });
+    const pw = await page.evaluate(() => ({ event: window.__servo.sim.event, share: window.__servo.sim.share }));
+    await page.evaluate(() => { window.__servo.bot = false; window.__servo.sim.world.thongs = { black: 3, gold: 1, footy: 1 }; window.__servo.ui.openNetwork(); }); await sleep(1200); await page.screenshot({ path: path.join(OUT, `${vp.name}-14-network.png`) });
+    await page.evaluate(() => window.__servo.ui.close('network'));
     // 6) refresh keeps the save
     await page.reload(); await sleep(400); await page.click('#btnStart'); await sleep(300);
-    const afterReload = await page.evaluate(() => ({ built: Object.keys(window.__servo.sim.built).length, cash: window.__servo.sim.cash }));
-    report.viewports.push({ ...vp, handShown, night, moved, state, busy, welcomeShown, complete, afterReload, errors, finalEvents: finalEvents.slice(-12) });
+    const afterReload = await page.evaluate(() => ({ servo: ServoEmpire.SERVO.id, built: Object.keys(window.__servo.sim.built).length, parked: Object.keys(window.__servo.sim.world.others), cash: Math.round(window.__servo.sim.cash) }));
+    report.viewports.push({ ...vp, postcardSeen, nb, pw, handShown, night, moved, state, busy, welcomeShown, complete, afterReload, errors, finalEvents: finalEvents.slice(-12) });
     report.errors.push(...errors.map(e => vp.name + ': ' + e));
     await ctx.close();
   }
@@ -75,12 +90,13 @@ async function run() {
     const full = () => { const g = window.__servo; const d = g.sim.toJSON(); for (const id of ServoEmpire.ORDER) d.built[id] = true; d.cash = 50000; d.upgrades = { walk: 3, carry: 3, station: 4, price: 4, staff: 4 }; d.player = { x: 5.5, y: 9.5 }; g.loadData(d); g.bot = true; g.sim.event = 'rush'; g.sim.eventT = 999; for (let i = 0; i < 8; i++) g.sim.spawnCustomer(); };
     const day = await runScene('full servo, rush, day', full, () => { window.__servo.sim.time = 10; });
     const nightScene = await runScene('full servo, rush, night', () => { window.__servo.sim.time = 205; });
-    report.throttled = { rate: 4, dpr: 2, scenes: [day, nightScene], errors }; report.errors.push(...errors.map(e => 'throttled: ' + e)); await ctx.close(); }
+    const nbScene = await runScene('Nullarbor full, night, convoy', () => { const g = window.__servo, s = g.sim; const d = s.toJSON(); d.unlocked.nullarbor = true; g.loadData(d); s.travel('nullarbor'); for (const id of ServoEmpire.ORDER) s.build(id); s.fx.length = 0; g.renderer.onServoChange(); s.fuel = 60; s.time = 210; s.event = 'rush'; s.eventT = 999; for (let i = 0; i < 8; i++) s.spawnCustomer(); });
+    report.throttled = { rate: 4, dpr: 2, scenes: [day, nightScene, nbScene], errors }; report.errors.push(...errors.map(e => 'throttled: ' + e)); await ctx.close(); }
   await browser.close();
   fs.writeFileSync(path.join(__dirname, 'browser-report.json'), JSON.stringify(report, null, 2));
-  for (const v of report.viewports) { console.log(`\n== ${v.name} ${v.width}x${v.height}`); console.log(' input moved player:', v.moved); console.log(' after 60s:', JSON.stringify(v.state)); console.log(' busy scene:', JSON.stringify(v.busy)); console.log(' tutorial hand:', v.handShown, ' night/ibis/roadtrain:', JSON.stringify(v.night)); console.log(' welcome shown:', v.welcomeShown, ' complete:', JSON.stringify(v.complete), ' after reload:', JSON.stringify(v.afterReload)); console.log(' errors:', v.errors.length ? v.errors : 'none'); }
+  for (const v of report.viewports) { console.log(`\n== ${v.name} ${v.width}x${v.height}`); console.log(' input moved player:', v.moved); console.log(' after 60s:', JSON.stringify(v.state)); console.log(' busy scene:', JSON.stringify(v.busy)); console.log(' nullarbor:', JSON.stringify(v.nb), ' price war:', JSON.stringify(v.pw)); console.log(' tutorial hand:', v.handShown, ' night/ibis/roadtrain:', JSON.stringify(v.night)); console.log(' welcome shown:', v.welcomeShown, ' complete:', JSON.stringify(v.complete), ' after reload:', JSON.stringify(v.afterReload)); console.log(' errors:', v.errors.length ? v.errors : 'none'); }
   console.log('\n== 4x CPU throttle, 390x844 @2x'); for (const sc of report.throttled.scenes) console.log(' ' + sc.label + ': fps ' + sc.fps.join(',') + ' (min ' + sc.min + ', avg ' + sc.avg.toFixed(0) + ') entities ' + sc.entities);
-  const fail = report.errors.length > 0 || report.viewports.some(v => !v.moved || !v.welcomeShown || !v.complete.open || v.afterReload.built < 15);
+  const fail = report.errors.length > 0 || report.viewports.some(v => !v.moved || !v.welcomeShown || !v.complete.open || !v.postcardSeen || v.nb.servo !== 'nullarbor' || v.afterReload.servo !== 'nullarbor' || !v.afterReload.parked.includes('outback'));
   console.log(fail ? '\nRELEASE CHECK: FAIL' : '\nRELEASE CHECK: PASS'); server.close(); process.exit(fail ? 1 : 0);
 }
 run().catch(e => { console.error(e); process.exit(1); });

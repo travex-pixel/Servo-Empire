@@ -1,5 +1,31 @@
 # Changelog
 
+## 0.3.0 - 2026-10-18
+
+Servo #2 and the Servo Network.
+
+### Servo #2: Long Straight Roadhouse, the Nullarbor
+- 17 new pads, a fresh wallet and its own economy, reached by a road-trip cutscene from the first servo's finale or the network map.
+- Fuel tank that every car drinks from, a tanker that drops fuel drums at a depot, and Tanker Trev to haul them.
+- Roo-damaged cars arrive mostly at night (the day/night cycle now matters); fix them at the Mechanic Bay or hire Mick the Mechanic.
+- Petrol Pete's servo across the highway, a Highway Share tug-of-war that changes traffic, and a "Pete's gone bust" milestone.
+- New events: Price War (stand on your price board to match Pete) and Grey Nomad Convoy (caravans).
+- Whale Lookout, Bunda Cliffs and ocean with whales, wombats and camels, saltbush plain, The Big Thong finale. 15 new customer lines.
+- New items: iced choc, dim sims, fuel drums. New vehicles: fuel tanker, caravans.
+
+### The Servo Network
+- Map of Australia with your servos, highways and live delivery trucks; travel between servos any time.
+- Parked servos keep earning and truck 25% of their idle income to the one you're playing (also counted in offline earnings).
+- Crew skills (walk, carry, staff speed) carry between servos and now go to level 10. Station speed and prices are per servo.
+- Big Things postcards (shareable image) and a 16-design Thong Wall collection (+1% prices per design).
+
+### Fixes and polish
+- Pad names and prices draw above the night lighting, are larger, and the camera can scroll past the map edges.
+- Share preview card, icons and Add to Home Screen manifest.
+- Shorter waits for the last pads at the first servo.
+- Save format v3 (multiple servos) with automatic migration from v1 and v2.
+
+
 ## 0.2.0 - 2026-10-17
 
 The "make it insane" update: game feel, graphics, a new event and a mid-game rebalance.
