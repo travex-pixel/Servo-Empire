@@ -6,6 +6,22 @@
 <meta name="theme-color" content="#2a1020">
 <meta name="description" content="Servo Empire: pies, petrol and pure chaos. Build the greatest servo in Australia.">
 <title>Servo Empire</title>
+<meta property="og:type" content="website">
+<meta property="og:title" content="Servo Empire">
+<meta property="og:description" content="Pies, petrol and pure chaos. Build the greatest servo in Australia. Free, in your browser.">
+<meta property="og:url" content="https://travex-pixel.github.io/Servo-Empire/">
+<meta property="og:image" content="https://travex-pixel.github.io/Servo-Empire/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Servo Empire: a cartoon outback servo at sunset, with pies, pumps and queuing customers">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://travex-pixel.github.io/Servo-Empire/og-image.png">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23d64b2a'/%3E%3Cellipse cx='32' cy='38' rx='22' ry='13' fill='%23d9a35b' stroke='%232b1a14' stroke-width='3'/%3E%3Cellipse cx='32' cy='35' rx='15' ry='8' fill='%23e8bf7c'/%3E%3Ccircle cx='42' cy='30' r='5' fill='%23d64b2a' stroke='%232b1a14' stroke-width='2'/%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Servo Empire">
 <style>
 :root{color-scheme:dark;--ink:#2b1a14;--cream:#fff3dc;--sun:#ff9f3f;--red:#d64b2a;--green:#4fb86a;}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
@@ -425,8 +441,8 @@ const STATIONS = [
   { id: 'shazza',    name: 'Hire Shazza',      kind: 'hire', staff: 'shazza', cost: 2600, x: 9,  y: 15, w: 1, h: 1, icon: '🧢', blurb: 'Shazza collects pump & car wash cash.' },
   { id: 'billboard', name: 'Highway Billboard',kind: 'billboard',cost: 3300, x: 3,  y: 1,  w: 2, h: 1, icon: '🪧', blurb: '+50% customers and cars. Steal them from Petrol Pete.' },
   { id: 'till2',     name: 'Second Till',      kind: 'till2',    cost: 4600, x: 10, y: 4,  w: 1, h: 1, icon: '💳', blurb: 'Serve faster, longer queue, +30% walk-ins.' },
-  { id: 'carwash',   name: 'Car Wash',         kind: 'carwash',  cost: 5800, x: 3,  y: 17, w: 2, h: 2, carStop: { x: 4, y: 18 }, pile: { x: 2.5, y: 19.5 }, collect: { x: 5.5, y: 18.5 }, icon: '🚿', blurb: 'Big money. Cars leave sparkling.' },
-  { id: 'bigpie',    name: 'The Big Pie',      kind: 'bigpie',   cost: 8800, x: 3,  y: 20, w: 2, h: 1, icon: '🥧', blurb: 'A Big Thing. Tourists lose their minds. +25% everything.' },
+  { id: 'carwash',   name: 'Car Wash',         kind: 'carwash',  cost: 4800, x: 3,  y: 17, w: 2, h: 2, carStop: { x: 4, y: 18 }, pile: { x: 2.5, y: 19.5 }, collect: { x: 5.5, y: 18.5 }, icon: '🚿', blurb: 'Big money. Cars leave sparkling.' },
+  { id: 'bigpie',    name: 'The Big Pie',      kind: 'bigpie',   cost: 7000, x: 3,  y: 20, w: 2, h: 1, icon: '🥧', blurb: 'A Big Thing. Tourists lose their minds. +25% everything.' },
 ];
 const STATION_BY_ID = Object.fromEntries(STATIONS.map(s => [s.id, s]));
 const ORDER = STATIONS.map(s => s.id);
@@ -975,8 +991,8 @@ class Renderer {
   render(dt) {
     const ctx = this.ctx, sim = this.sim, T = this.T, W = this.W, H = this.H; this.time += dt; this.frames++; this.fpsT += dt; if (this.fpsT >= 1) { this.fps = this.frames; this.frames = 0; this.fpsT = 0; }
     this.goalT -= dt; if (this.goalT <= 0) { this.goalT = 0.15; this.goal = sim.nextGoal(); }
-    const p = sim.player; const vw = W / T, vh = H / T; let tx = p.x, ty = p.y + 0.6;
-    if (vw >= MAP.W) tx = MAP.W / 2; else tx = clamp(tx, vw / 2, MAP.W - vw / 2); if (vh >= MAP.H) ty = MAP.H / 2; else ty = clamp(ty, vh / 2, MAP.H - vh / 2);
+    const p = sim.player; const vw = W / T, vh = H / T; let tx = p.x, ty = p.y + 1.2;
+    if (vw >= MAP.W) tx = MAP.W / 2; else tx = clamp(tx, vw / 2, MAP.W - vw / 2); if (vh >= MAP.H + 2) ty = (MAP.H + 2) / 2; else ty = clamp(ty, vh / 2, MAP.H + 2 - vh / 2);
     const k = 1 - Math.pow(0.001, dt); this.cam.x += (tx - this.cam.x) * k; this.cam.y += (ty - this.cam.y) * k;
     // player body dynamics: carry-stack lean spring + squash
     const pvx = (p.x - this.lastPX) / Math.max(dt, 1e-3); this.lastPX = p.x; const target = clamp(-pvx * 0.06, -0.35, 0.35); this.leanV += ((target - this.lean) * 90 - this.leanV * 9) * dt; this.lean += this.leanV * dt; this.squash *= Math.pow(0.002, dt);
@@ -988,7 +1004,9 @@ class Renderer {
     const z = 1 + (this.punch > 0.001 ? this.punch : 0); if (this.punch > 0.001) this.punch *= Math.pow(0.004, dt); else this.punch = 0;
     const world = () => { ctx.translate(shx, shy); if (z > 1) { ctx.translate(W / 2, H / 2); ctx.scale(z, z); ctx.translate(-W / 2, -H / 2); } };
     ctx.save(); world();
-    const [gx, gy] = this.w2s(-WORLD_MARGIN, -WORLD_MARGIN); ctx.drawImage(this.ground, gx, gy, (MAP.W + WORLD_MARGIN * 2) * T, (MAP.H + WORLD_MARGIN * 2) * T);
+    const [gx, gy] = this.w2s(-WORLD_MARGIN, -WORLD_MARGIN), gw = (MAP.W + WORLD_MARGIN * 2) * T, gh = (MAP.H + WORLD_MARGIN * 2) * T;
+    if (gx > -12 || gy > -12 || gx + gw < W + 12 || gy + gh < H + 12) { ctx.fillStyle = '#b9502f'; ctx.fillRect(-20, -20, W + 40, H + 40); } // only clear when the ground doesn't cover the screen
+    ctx.drawImage(this.ground, gx, gy, gw, gh);
     this.drawCloudShadows();
     for (const id of sim.visiblePads()) this.drawPad(STATION_BY_ID[id]);
     if (sim.built.counter && !sim.staff.val) { const [sx, sy] = this.w2s(MAP.serveSpot.x, MAP.serveSpot.y); ctx.globalAlpha = 0.55 + 0.25 * Math.sin(this.time * 4); ellipse(ctx, sx, sy, T * 0.38, T * 0.2, p.atCounter ? '#4fb86a' : '#ffe27a', INK, 2); ctx.globalAlpha = 1; label(ctx, 'SERVE', sx, sy, T * 0.2, INK, null); }
@@ -1008,7 +1026,7 @@ class Renderer {
     this.drawNotes(dt);
     ctx.restore();
     this.drawLighting(day); // one screen-space pass: vignette + sunset tint + night lightmap + glows
-    ctx.save(); world(); this.drawBubbles(); this.drawParticles(dt); this.drawArrow(); ctx.restore();
+    ctx.save(); world(); for (const id of sim.visiblePads()) this.drawPadLabel(STATION_BY_ID[id]); this.drawBubbles(); this.drawParticles(dt); this.drawArrow(); ctx.restore();
     if (sim.event === 'rush') { ctx.strokeStyle = 'rgba(255,120,30,' + (0.35 + 0.25 * Math.sin(this.time * 6)) + ')'; ctx.lineWidth = 10; ctx.strokeRect(5, 5, W - 10, H - 10); }
     if (this.flash > 0) { ctx.fillStyle = 'rgba(255,240,200,' + this.flash * 0.45 + ')'; ctx.fillRect(0, 0, W, H); this.flash -= dt * 3; }
     this.drawScreenParticles(dt); this.drawEdgeAlerts(); this.drawHand(); this.drawJoystick();
@@ -1042,18 +1060,21 @@ class Renderer {
     ctx.save(); ctx.globalAlpha = afford ? 0.55 : 0.32; if (st.kind === 'hire') { const sp = this.personSprite(LOOKS[st.staff], 1, 4, false); ctx.drawImage(sp.cv, sx + w / 2 - sp.w / 2 * 0.8, sy + h * 0.9 - sp.ay * 0.8, sp.w * 0.8, sp.h * 0.8); } else this.drawStation(st, true); ctx.restore();
     ctx.setLineDash([8, 6]); ctx.lineDashOffset = -this.time * 30; rr(ctx, sx - 4, sy - 4, w + 8, h + 8, 10); ctx.lineWidth = 3; ctx.strokeStyle = afford ? '#ffe27a' : '#fff3dc'; ctx.stroke(); ctx.setLineDash([]);
     ctx.restore();
-    const txt = remaining < st.cost ? fmt(remaining) + ' to go' : fmt(st.cost); const fs = Math.max(10, T * 0.2);
-    pill(ctx, (st.kind === 'hire' ? '' : '') + st.name, sx + w / 2, sy + h + T * 0.22, fs, INK, '#fff3dc');
-    pill(ctx, txt, sx + w / 2, sy + h + T * 0.22 + fs + 12, Math.max(10, T * 0.21), afford ? '#4fb86a' : '#8d3b2e', '#fff');
+  }
+  drawPadLabel(st) { // drawn above the night lighting so names and prices are always full contrast
+    const ctx = this.ctx, T = this.T, sim = this.sim; const [sx, sy] = this.w2s(st.x, st.y); const w = st.w * T, h = st.h * T; const remaining = st.cost - (sim.paid[st.id] || 0); const afford = sim.cash >= remaining;
+    const fs = Math.max(12, T * 0.22); const txt = remaining < st.cost ? fmt(remaining) + ' to go' : fmt(st.cost);
+    pill(ctx, st.name, sx + w / 2, sy + h + T * 0.24, fs, INK, '#fff3dc', 9);
+    pill(ctx, txt, sx + w / 2, sy + h + T * 0.24 + fs + 13, Math.max(13, T * 0.24), afford ? '#2d9a4e' : '#a23a2a', '#fff', 9);
   }
   drawStation(st, ghost = false) {
-    const ctx = this.ctx, T = this.T, sim = this.sim; const [sx, sy] = this.w2s(st.x, st.y); const w = st.w * T, h = st.h * T;
+    const ctx = this.ctx, T = this.T, sim = this.sim; const [sx, sy] = this.w2s(st.x, st.y); const w = st.w * T, h = st.h * T; const L = ghost ? () => {} : label;
     const b = ghost ? 0 : (sim.bounce[st.id] || 0); let sc = 1 + 0.12 * Math.sin(b * Math.PI) * b, drop = 0;
     const rv = ghost ? undefined : this.reveal[st.id]; if (rv !== undefined) { const e = easeOutBack(clamp(rv, 0, 1)); sc = Math.max(0.01, e); drop = (1 - clamp(rv * 1.6, 0, 1)) * -2.2 * T; }
     ctx.save(); ctx.translate(sx + w / 2, sy + h + drop); ctx.scale(sc, rv !== undefined ? sc : 2 - sc); ctx.translate(-(sx + w / 2), -(sy + h));
     switch (st.kind) {
       case 'pump': { box(ctx, sx + 0.22 * T, sy + 0.3 * T, 0.56 * T, 0.68 * T, 6, '#7d7f86'); box(ctx, sx + 0.22 * T, sy + 0.1 * T, 0.56 * T, 0.3 * T, 6, '#d64b2a'); box(ctx, sx + 0.3 * T, sy + 0.45 * T, 0.4 * T, 0.2 * T, 3, '#9fe3ff', INK, 2);
-        ctx.strokeStyle = INK; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(sx + 0.26 * T, sy + 0.5 * T); ctx.quadraticCurveTo(sx - 0.05 * T, sy + 0.55 * T, sx + 0.02 * T, sy + 0.95 * T); ctx.stroke(); label(ctx, st.id.slice(-1), sx + 0.5 * T, sy + 0.82 * T, T * 0.22, '#fff');
+        ctx.strokeStyle = INK; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(sx + 0.26 * T, sy + 0.5 * T); ctx.quadraticCurveTo(sx - 0.05 * T, sy + 0.55 * T, sx + 0.02 * T, sy + 0.95 * T); ctx.stroke(); L(ctx, st.id.slice(-1), sx + 0.5 * T, sy + 0.82 * T, T * 0.22, '#fff');
         if (!ghost) { const busy = sim.cars.find(c => c.station === st.id && c.state === 'fill'); if (busy) { ctx.fillStyle = '#ffe27a'; ctx.font = '900 ' + (T * 0.13) + 'px ' + FONT; ctx.textAlign = 'center'; ctx.fillText('$' + ((1 - busy.t / (busy.total || 1)) * 99).toFixed(0), sx + 0.5 * T, sy + 0.56 * T); } } break; }
       case 'maker': { const item = st.item; const n = ghost ? 0 : sim.tray[item], cap = ECON.makers[item].cap; const col = item === 'pie' ? '#444' : item === 'coffee' ? '#1f3b57' : '#5b6670';
         box(ctx, sx + 0.1 * T, sy + 0.26 * T, 0.8 * T, 0.72 * T, 6, col); box(ctx, sx + 0.1 * T, sy + 0.1 * T, 0.8 * T, 0.22 * T, 6, item === 'coffee' ? '#c0c8d0' : '#333');
@@ -1067,21 +1088,21 @@ class Renderer {
         const items = ghost ? [] : sim.unlockedItems(); items.forEach((it, idx) => { const cx = sx + (0.55 + idx * 0.85) * T + (3 - items.length) * 0.4 * T; const n = sim.shelf[it]; const rows = Math.min(n, 5); for (let i = 0; i < rows; i++) this.drawItem(cx, sy + 0.4 * T - i * 0.07 * T, it, 0.5); pill(ctx, String(n), cx, sy + 0.62 * T, Math.max(9, T * 0.17), n === 0 ? '#d64b2a' : INK, '#fff', 5); });
         box(ctx, sx + w - 0.5 * T, sy + 0.02 * T, 0.42 * T, 0.5 * T, 4, '#d9d9d9'); box(ctx, sx + w - 0.46 * T, sy + 0.08 * T, 0.34 * T, 0.2 * T, 2, '#9fe3ff', INK, 2); if (!ghost) circle(ctx, sx + 0.3 * T, sy + 0.25 * T, 0.12 * T, '#ffe27a', INK, 2); break; }
       case 'till2': { box(ctx, sx + 0.12 * T, sy + 0.4 * T, 0.76 * T, 0.6 * T, 6, '#a86a3c'); box(ctx, sx + 0.22 * T, sy + 0.05 * T, 0.56 * T, 0.5 * T, 4, '#d9d9d9'); box(ctx, sx + 0.3 * T, sy + 0.12 * T, 0.4 * T, 0.2 * T, 2, '#9fe3ff', INK, 2); break; }
-      case 'office': { box(ctx, sx + 0.1 * T, sy + 0.4 * T, w - 0.2 * T, 0.58 * T, 6, '#6b4a2b'); box(ctx, sx + 0.1 * T, sy - 0.1 * T, w - 0.2 * T, 0.55 * T, 6, '#2b7a4b'); label(ctx, 'UPGRADES', sx + w / 2, sy + 0.18 * T, T * 0.24, '#fff3dc'); box(ctx, sx + w - 0.65 * T, sy + 0.42 * T, 0.5 * T, 0.38 * T, 3, '#cfd8dc'); box(ctx, sx + w - 0.6 * T, sy + 0.47 * T, 0.4 * T, 0.22 * T, 2, '#3d9be9', INK, 2); break; }
-      case 'hire': { box(ctx, sx + 0.25 * T, sy + 0.2 * T, 0.5 * T, 0.78 * T, 4, st.staff === 'gav' ? '#ff7a1a' : st.staff === 'val' ? '#9b5de5' : '#f3e600'); label(ctx, STAFF_INFO[st.staff].name.split(' ').pop().toUpperCase(), sx + 0.5 * T, sy + 0.6 * T, T * 0.16, '#fff'); break; }
+      case 'office': { box(ctx, sx + 0.1 * T, sy + 0.4 * T, w - 0.2 * T, 0.58 * T, 6, '#6b4a2b'); box(ctx, sx + 0.1 * T, sy - 0.1 * T, w - 0.2 * T, 0.55 * T, 6, '#2b7a4b'); L(ctx, 'UPGRADES', sx + w / 2, sy + 0.18 * T, T * 0.24, '#fff3dc'); box(ctx, sx + w - 0.65 * T, sy + 0.42 * T, 0.5 * T, 0.38 * T, 3, '#cfd8dc'); box(ctx, sx + w - 0.6 * T, sy + 0.47 * T, 0.4 * T, 0.22 * T, 2, '#3d9be9', INK, 2); break; }
+      case 'hire': { box(ctx, sx + 0.25 * T, sy + 0.2 * T, 0.5 * T, 0.78 * T, 4, st.staff === 'gav' ? '#ff7a1a' : st.staff === 'val' ? '#9b5de5' : '#f3e600'); L(ctx, STAFF_INFO[st.staff].name.split(' ').pop().toUpperCase(), sx + 0.5 * T, sy + 0.6 * T, T * 0.16, '#fff'); break; }
       case 'billboard': { ctx.fillStyle = INK; ctx.fillRect(sx + 0.3 * T, sy + 0.2 * T, 0.12 * T, 0.8 * T); ctx.fillRect(sx + w - 0.42 * T, sy + 0.2 * T, 0.12 * T, 0.8 * T);
         const grd = ctx.createLinearGradient(0, sy - 0.9 * T, 0, sy + 0.3 * T); grd.addColorStop(0, '#ff7a3d'); grd.addColorStop(1, '#b8336a'); box(ctx, sx + 0.05 * T, sy - 0.95 * T, w - 0.1 * T, 1.2 * T, 6, grd);
-        label(ctx, this.servoName ? this.servoName.toUpperCase() + "'S" : 'SERVO EMPIRE', sx + w / 2, sy - 0.62 * T, T * 0.24, '#fff3dc'); label(ctx, 'next left · pies · fuel', sx + w / 2, sy - 0.3 * T, T * 0.16, '#fff3dc', null); label(ctx, "Petrol Pete's? Nah.", sx + w / 2, sy - 0.05 * T, T * 0.15, '#ffe27a', null);
+        L(ctx, this.servoName ? this.servoName.toUpperCase() + "'S" : 'SERVO EMPIRE', sx + w / 2, sy - 0.62 * T, T * 0.24, '#fff3dc'); L(ctx, 'next left · pies · fuel', sx + w / 2, sy - 0.3 * T, T * 0.16, '#fff3dc', null); L(ctx, "Petrol Pete's? Nah.", sx + w / 2, sy - 0.05 * T, T * 0.15, '#ffe27a', null);
         if (!ghost) for (let i = 0; i < 5; i++) circle(ctx, sx + 0.25 * T + i * (w - 0.5 * T) / 4, sy + 0.2 * T, 3, (Math.floor(this.time * 4) + i) % 2 ? '#ffe27a' : '#d64b2a', null); break; }
       case 'carwash': { const busy = !ghost && sim.cars.some(c => c.station === 'carwash' && c.state === 'fill');
-        box(ctx, sx + 0.05 * T, sy + 0.1 * T, 0.35 * T, h - 0.2 * T, 6, '#2b7fd1'); box(ctx, sx + w - 0.4 * T, sy + 0.1 * T, 0.35 * T, h - 0.2 * T, 6, '#2b7fd1'); box(ctx, sx, sy - 0.2 * T, w, 0.4 * T, 6, '#3d9be9'); label(ctx, 'CAR WASH', sx + w / 2, sy, T * 0.2, '#fff');
+        box(ctx, sx + 0.05 * T, sy + 0.1 * T, 0.35 * T, h - 0.2 * T, 6, '#2b7fd1'); box(ctx, sx + w - 0.4 * T, sy + 0.1 * T, 0.35 * T, h - 0.2 * T, 6, '#2b7fd1'); box(ctx, sx, sy - 0.2 * T, w, 0.4 * T, 6, '#3d9be9'); L(ctx, 'CAR WASH', sx + w / 2, sy, T * 0.2, '#fff');
         const rot = busy ? this.time * 10 : 0; for (const bx of [sx + 0.22 * T, sx + w - 0.22 * T]) { circle(ctx, bx, sy + 1.0 * T, 0.3 * T, '#5dade2'); for (let i = 0; i < 6; i++) { const a = rot + i; ctx.strokeStyle = '#1b4f72'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(bx, sy + T); ctx.lineTo(bx + Math.cos(a) * 0.28 * T, sy + T + Math.sin(a) * 0.28 * T); ctx.stroke(); } }
         if (busy) for (let i = 0; i < 9; i++) { const t = (this.time * 1.5 + i * 0.37) % 1; circle(ctx, sx + 0.3 * T + ((i * 37) % 100) / 100 * (w - 0.6 * T), sy + h - t * h, 4 + 3 * Math.sin(i), 'rgba(255,255,255,' + (0.85 - t * 0.7) + ')', 'rgba(150,200,255,0.6)', 1); } break; }
       case 'bigpie': { box(ctx, sx + 0.1 * T, sy + 0.45 * T, w - 0.2 * T, 0.55 * T, 6, '#8f8f8a'); ellipse(ctx, sx + w / 2, sy + 0.3 * T, 0.95 * T, 0.5 * T, '#d9a35b', INK, 4); ellipse(ctx, sx + w / 2, sy + 0.2 * T, 0.7 * T, 0.32 * T, '#e8bf7c', '#8a4a1c', 3);
         ctx.strokeStyle = '#8a4a1c'; ctx.lineWidth = 3; for (let i = -1; i <= 1; i++) { ctx.beginPath(); ctx.moveTo(sx + w / 2 + i * 0.25 * T, sy + 0.1 * T); ctx.lineTo(sx + w / 2 + i * 0.25 * T, sy + 0.3 * T); ctx.stroke(); }
         circle(ctx, sx + w / 2 + 0.3 * T, sy + 0.05 * T, 0.12 * T, '#d64b2a', INK, 2); // dollop of sauce
         if (!ghost) for (let i = 0; i < 3; i++) { const t = (this.time * 0.6 + i * 0.33) % 1; ctx.strokeStyle = 'rgba(255,255,255,' + (0.6 - t * 0.6) + ')'; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(sx + w / 2 + (i - 1) * 0.3 * T, sy - 0.1 * T - t * 0.7 * T); ctx.quadraticCurveTo(sx + w / 2 + (i - 1) * 0.3 * T + 8, sy - 0.25 * T - t * 0.7 * T, sx + w / 2 + (i - 1) * 0.3 * T, sy - 0.4 * T - t * 0.7 * T); ctx.stroke(); }
-        label(ctx, 'THE BIG PIE', sx + w / 2, sy + 0.78 * T, T * 0.2, '#fff3dc'); break; }
+        L(ctx, 'THE BIG PIE', sx + w / 2, sy + 0.78 * T, T * 0.2, '#fff3dc'); break; }
     }
     ctx.restore();
   }
@@ -1361,7 +1382,7 @@ class Game {
       else { const v = modal ? { x: 0, y: 0 } : this.input.vector(); this.sim.input.x = v.x; this.sim.input.y = v.y; }
       let steps = 0; while (this.acc >= SIM_DT && steps < 16) { this.sim.step(SIM_DT); this.acc -= SIM_DT; steps++; }
       for (const f of this.sim.fx) this.ui.handleFx(f); this.sim.fx.length = 0;
-      if (!this.hasMoved && this.sim.player.moving) this.hasMoved = true; this.renderer.showHand = !this.hasMoved && this.sim.stats.unlocks === 0 && !modal;
+      if (!this.hasMoved && this.sim.player.moving) this.hasMoved = true; this.renderer.showHand = !this.hasMoved && Object.keys(this.sim.built).length === 0 && !modal;
       this.renderer.render(Math.min(real, 0.1)); this.ui.tick(Math.min(real, 0.1));
       this.saveT += real; if (this.saveT >= 5) { this.saveT = 0; this.save(); }
       this.qualityT += real; if (this.qualityT >= 1) { this.qualityT = 0; this.adaptQuality(); }

@@ -2,11 +2,14 @@
 // input, drives the player with the in-page bot, takes screenshots, and FAILS on any console error or page error.
 const { chromium } = require('playwright');
 const path = require('path'), fs = require('fs');
-const URL = 'file://' + path.join(__dirname, '..', 'index.html');
+const http = require('http');
+const ROOT = path.join(__dirname, '..'); const TYPES = { '.html': 'text/html', '.png': 'image/png', '.webmanifest': 'application/manifest+json', '.js': 'text/javascript' };
+const server = http.createServer((req, res) => { const f = path.join(ROOT, decodeURIComponent(req.url.split('?')[0]) === '/' ? 'index.html' : decodeURIComponent(req.url.split('?')[0])); if (!f.startsWith(ROOT) || !fs.existsSync(f)) { res.writeHead(404); res.end(); return; } res.writeHead(200, { 'Content-Type': TYPES[path.extname(f)] || 'application/octet-stream' }); fs.createReadStream(f).pipe(res); });
+let URL = '';
 const OUT = path.join(__dirname, '..', 'docs', 'screenshots');
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 async function run() {
-  fs.mkdirSync(OUT, { recursive: true });
+  fs.mkdirSync(OUT, { recursive: true }); await new Promise(r => server.listen(0, '127.0.0.1', r)); URL = 'http://127.0.0.1:' + server.address().port + '/';
   const browser = await chromium.launch({ args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader'] });
   const report = { viewports: [], errors: [] };
   for (const vp of [{ name: 'phone', width: 390, height: 844, isMobile: true, hasTouch: true, deviceScaleFactor: 3 }, { name: 'desktop', width: 1440, height: 900, isMobile: false, hasTouch: false, deviceScaleFactor: 1 }]) {
@@ -78,6 +81,6 @@ async function run() {
   for (const v of report.viewports) { console.log(`\n== ${v.name} ${v.width}x${v.height}`); console.log(' input moved player:', v.moved); console.log(' after 60s:', JSON.stringify(v.state)); console.log(' busy scene:', JSON.stringify(v.busy)); console.log(' tutorial hand:', v.handShown, ' night/ibis/roadtrain:', JSON.stringify(v.night)); console.log(' welcome shown:', v.welcomeShown, ' complete:', JSON.stringify(v.complete), ' after reload:', JSON.stringify(v.afterReload)); console.log(' errors:', v.errors.length ? v.errors : 'none'); }
   console.log('\n== 4x CPU throttle, 390x844 @2x'); for (const sc of report.throttled.scenes) console.log(' ' + sc.label + ': fps ' + sc.fps.join(',') + ' (min ' + sc.min + ', avg ' + sc.avg.toFixed(0) + ') entities ' + sc.entities);
   const fail = report.errors.length > 0 || report.viewports.some(v => !v.moved || !v.welcomeShown || !v.complete.open || v.afterReload.built < 15);
-  console.log(fail ? '\nRELEASE CHECK: FAIL' : '\nRELEASE CHECK: PASS'); process.exit(fail ? 1 : 0);
+  console.log(fail ? '\nRELEASE CHECK: FAIL' : '\nRELEASE CHECK: PASS'); server.close(); process.exit(fail ? 1 : 0);
 }
 run().catch(e => { console.error(e); process.exit(1); });

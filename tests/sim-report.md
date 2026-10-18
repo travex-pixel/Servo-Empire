@@ -3,12 +3,12 @@
 
 | bot | seed | finished | total min | first unlock | longest idle | unlocks in 10 min | longest gap (min) | lost sales |
 |---|---|---|---|---|---|---|---|---|
-| efficient | 7 | yes | 33.2 | 2.4 s | 6 s @ 0.1 m | 8 | 5.2 | 26 |
-| efficient | 21 | yes | 34.0 | 2.4 s | 6 s @ 0.1 m | 8 | 5.7 | 22 |
-| efficient | 99 | yes | 32.7 | 2.4 s | 6 s @ 0.1 m | 9 | 5.8 | 19 |
-| lazy | 7 | yes | 36.2 | 4.8 s | 6 s @ 0.7 m | 9 | 9.0 | 24 |
-| lazy | 21 | yes | 31.0 | 7.9 s | 6 s @ 0.2 m | 9 | 5.6 | 13 |
-| lazy | 99 | yes | 35.4 | 8.1 s | 6 s @ 0.7 m | 9 | 7.7 | 23 |
+| efficient | 7 | yes | 30.2 | 2.4 s | 6 s @ 0.1 m | 8 | 4.6 | 26 |
+| efficient | 21 | yes | 30.7 | 2.4 s | 6 s @ 0.1 m | 8 | 4.7 | 22 |
+| efficient | 99 | yes | 29.6 | 2.4 s | 6 s @ 0.1 m | 9 | 4.2 | 17 |
+| lazy | 7 | yes | 34.1 | 4.8 s | 6 s @ 0.7 m | 9 | 6.7 | 22 |
+| lazy | 21 | yes | 29.6 | 7.9 s | 6 s @ 0.2 m | 9 | 4.8 | 13 |
+| lazy | 99 | yes | 32.7 | 8.1 s | 6 s @ 0.7 m | 9 | 5.0 | 24 |
 
 Time to each unlock (minutes), efficient seed 7 vs lazy seed 7:
 
@@ -27,8 +27,8 @@ Time to each unlock (minutes), efficient seed 7 vs lazy seed 7:
 | 11 | Hire Shazza | 15.4 | 15.4 |
 | 12 | Highway Billboard | 23.0 | 22.1 |
 | 13 | Second Till | 18.4 | 19.2 |
-| 14 | Car Wash | 27.9 | 31.1 |
-| 15 | The Big Pie | 33.2 | 36.2 |
+| 14 | Car Wash | 26.5 | 28.8 |
+| 15 | The Big Pie | 30.2 | 34.1 |
 
   ✔ every bot run finishes the map
   ✔ first unlock within 20 s
