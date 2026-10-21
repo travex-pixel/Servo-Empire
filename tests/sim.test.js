@@ -35,7 +35,7 @@ G.ORDER.forEach((id, i) => { const a = e7.find(u => u.id === id), b = l7.find(u 
 log('');
 check('every bot run finishes the map', () => summary.forEach(s => assert(s.done, s.kind + ' seed ' + s.seed)));
 check('first unlock within 20 s', () => summary.forEach(s => assert(s.first <= 20, s.first)));
-check('whole map in 30-45 min active play', () => summary.forEach(s => assert(s.total >= 25 && s.total <= 46, s.kind + ' ' + s.total.toFixed(1))));
+check('whole first servo in 18-40 min of active play (shift goals make it brisker than v0.3)', () => summary.forEach(s => assert(s.total >= 18 && s.total <= 40, s.kind + ' ' + s.total.toFixed(1))));
 check('no idle stretch over 45 s (nothing to do, nothing affordable)', () => summary.forEach(s => assert(s.idle <= 45, s.idle)));
 check('at least 7 unlocks in the first 10 minutes', () => summary.forEach(s => assert(s.first10 >= 7, s.kind + ' ' + s.first10)));
 check('customers never take over 40 s to reach the queue (no stuck pathing)', () => summary.forEach(s => assert(s.maxEnter < 40, s.maxEnter)));
@@ -44,7 +44,7 @@ check('chaos events fire roughly every 2-3 min', () => summary.forEach(s => { co
 
 /* ---------- 2. offline ---------- */
 log('\n## Offline earnings');
-function stage(built, upg, staffNote) { const sim = new G.Sim({ seed: 3 }); const d = sim.toJSON(); for (const id of built) d.built[id] = true; d.upgrades = upg; sim.load(d); return sim; }
+function stage(built, upg, staffNote) { const sim = new G.Sim({ seed: 3, meta: false }); const d = sim.toJSON(); for (const id of built) d.built[id] = true; d.upgrades = upg; sim.load(d); return sim; }
 const stages = [['pump1 only', ['pump1'], null], ['mid game (8 pads, Gav+Val)', G.ORDER.slice(0, 8), null], ['full servo, no upgrades', G.ORDER, null], ['full servo, mid upgrades', G.ORDER, { walk: 3, carry: 3, station: 4, price: 4, staff: 4 }]];
 log('\n| stage | $/min | 10 min away | 2 h away | 3 days away | capped |'); log('|---|---|---|---|---|---|');
 for (const [name, built, upg] of stages) { const sim = stage(built, upg || { walk: 0, carry: 0, station: 0, price: 0, staff: 0 }); const a = sim.offlineEarnings(600), b = sim.offlineEarnings(7200), c = sim.offlineEarnings(3 * 86400);
@@ -63,9 +63,9 @@ check('save mid-carry, reload: carry, cash, built, upgrades, piles, staff carry 
   assert.strictEqual(JSON.stringify(sim2.player.carry), JSON.stringify(['pie', 'pie', 'coffee'])); assert.strictEqual(sim2.cash, 1234.5); assert.strictEqual(Object.keys(sim2.built).length, 8); assert.strictEqual(sim2.upgrades.carry, 2); assert.strictEqual(sim2.piles.pump1, 77); assert.strictEqual(sim2.shelf.pie, 4); assert.strictEqual(sim2.tray.coffee, 3); assert.strictEqual(JSON.stringify(sim2.staff.gav.carry), '["pie"]'); assert(sim2.staff.val && sim2.staff.gav); assert(Math.abs(sim2.player.x - 8.5) < 1e-9);
   for (let i = 0; i < 600; i++) { sim2.step(1 / 60); sim2.fx.length = 0; } // keeps running after load
 });
-check('migrates a v1 save (money, built array) to v3', () => {
+check('migrates a v1 save (money, built array) to v4', () => {
   const v1 = { v: 1, money: 500, built: ['pump1', 'pie', 'counter'], player: { x: 5, y: 7 }, lastSeen: Date.now() - 1000 };
-  const d = G.Save.migrate(JSON.parse(JSON.stringify(v1))); assert.strictEqual(d.v, 3); assert.strictEqual(d.active, 'outback'); assert.strictEqual(d.cash, 500); assert.strictEqual(JSON.stringify(d.built), JSON.stringify({ pump1: true, pie: true, counter: true }));
+  const d = G.Save.migrate(JSON.parse(JSON.stringify(v1))); assert.strictEqual(d.v, 4); assert.strictEqual(d.active, 'outback'); assert.strictEqual(d.cash, 500); assert.strictEqual(JSON.stringify(d.built), JSON.stringify({ pump1: true, pie: true, counter: true }));
   const sim = new G.Sim({ seed: 1 }); sim.load(d); assert.strictEqual(sim.cash, 500); assert(sim.built.counter);
 });
 check('corrupt primary save falls back to the backup copy', () => {
@@ -80,7 +80,7 @@ log('\n## Analytics events');
 check('all required events fire with the right properties', () => {
   const events = []; const sim = new G.Sim({ seed: 7, track: (e, p) => events.push({ e, p }) }); sim.STATION_BY_ID = G.STATION_BY_ID; const bot = makeBot('efficient', new G.RNG(1)); let t = 0; while (t < 60 * 60 && !sim.allBuilt()) { bot(sim, t, 1 / 60); sim.step(1 / 60); sim.fx.length = 0; t += 1 / 60; }
   const names = new Set(events.map(x => x.e)); for (const n of ['unlock_bought', 'staff_hired', 'upgrade_bought', 'chaos_event_seen', 'map_complete']) assert(names.has(n), 'missing ' + n);
-  const u = events.find(x => x.e === 'unlock_bought'); assert('station' in u.p && 'minutes_since_first_play' in u.p); const h = events.find(x => x.e === 'staff_hired'); assert(h.p.staff); const c = events.find(x => x.e === 'chaos_event_seen'); assert(['rush', 'seagulls'].includes(c.p.event));
+  const u = events.find(x => x.e === 'unlock_bought'); assert('station' in u.p && 'minutes_since_first_play' in u.p); const h = events.find(x => x.e === 'staff_hired'); assert(h.p.staff); const c = events.find(x => x.e === 'chaos_event_seen'); assert(G.SERVOS.outback.events.includes(c.p.event), c.p.event);
   assert.strictEqual(events.filter(x => x.e === 'unlock_bought').length, 15); assert.strictEqual(events.filter(x => x.e === 'staff_hired').length, 3);
   log('   events seen: ' + [...names].join(', ') + ' (session_start, offline_return, double_offline_tapped, servo2_tapped are fired by the browser layer and checked in the browser test)');
 });
@@ -89,7 +89,7 @@ check('Analytics class buffers events when disabled/headless and never throws', 
 
 /* ---------- 4b. v0.2 features ---------- */
 log('\n## v0.2 features');
-function stageSim(ids, seed = 11) { const sim = new G.Sim({ seed }); const d = sim.toJSON(); for (const id of ids) d.built[id] = true; sim.load(d); sim.chaosT = 1e9; return sim; }
+function stageSim(ids, seed = 11) { const sim = new G.Sim({ seed, meta: false }); const d = sim.toJSON(); for (const id of ids) d.built[id] = true; sim.load(d); sim.chaosT = 1e9; return sim; }
 check('hustle: builds with actions, caps at +50%, decays when idle', () => { const sim = stageSim(['pump1']); for (let i = 0; i < 40; i++) sim.addHustle(1); assert(Math.abs(sim.hustleMult - 1.5) < 1e-9); for (let i = 0; i < 60 * 10; i++) { sim.step(1 / 60); sim.fx.length = 0; } assert(sim.hustle === 0, sim.hustle); });
 check('hustle: bonus applies to piles the player grabs, never to Shazza or offline', () => { const sim = stageSim(['pump1', 'pie', 'counter', 'coffee', 'pump2', 'office', 'gav', 'val', 'roll', 'pump3', 'shazza']); const off0 = sim.offlineRate();
   sim.hustle = 0.5; sim.hustleHold = 99; sim.piles.pump1 = 100; const pp = G.STATION_BY_ID.pump1.pile; sim.player.x = pp.x; sim.player.y = pp.y; const c0 = sim.cash; sim.step(1 / 60); assert.strictEqual(Math.round(sim.cash - c0), 150);
@@ -115,13 +115,31 @@ for (const c of camps) { const a = c.servos.outback, b = c.servos.nullarbor; con
 log('\nNullarbor unlock times (minutes after arriving), efficient seed 7:');
 log('\n' + camps[0].servos.nullarbor.unlocks.map(u => `${u.id} ${(u.t / 60).toFixed(1)}`).join(' · '));
 log('');
-check('Nullarbor: every bot finishes both servos', () => camps.forEach(c => { assert(c.servos.outback.done && c.servos.nullarbor.done, c.kind + ' ' + c.seed); }));
-check('Nullarbor: 25-45 min of active play', () => camps.forEach(c => { const m = c.servos.nullarbor.min; assert(m >= 25 && m <= 45, m.toFixed(1)); }));
+check('campaign: every bot finishes all four servos', () => camps.forEach(c => { for (const id of G.SERVO_ORDER) assert(c.servos[id] && c.servos[id].done, c.kind + ' ' + c.seed + ' ' + id); }));
+check('Nullarbor: 22-42 min of active play', () => camps.forEach(c => { const m = c.servos.nullarbor.min; assert(m >= 22 && m <= 42, m.toFixed(1)); }));
 check('Nullarbor: first unlock within 20 s of arriving', () => camps.forEach(c => assert(c.servos.nullarbor.unlocks[0].t <= 20, c.servos.nullarbor.unlocks[0].t)));
 check('Nullarbor: no idle stretch over 45 s', () => camps.forEach(c => assert(c.servos.nullarbor.idleMax <= 45, c.servos.nullarbor.idleMax)));
 check('Nullarbor: no unlock gap over 7 min', () => camps.forEach(c => { const ts = c.servos.nullarbor.unlocks.map(u => u.t); for (let i = 1; i < ts.length; i++) assert((ts[i] - ts[i - 1]) / 60 <= 7, 'gap ' + ((ts[i] - ts[i - 1]) / 60).toFixed(1)); }));
 check('Nullarbor: a bot that follows the arrow never lets the tank run dry more than a few times', () => camps.forEach(c => assert((c.servos.nullarbor.stats.dry || 0) <= 5, c.servos.nullarbor.stats.dry)));
 check('Nullarbor: roo repairs happen and Petrol Pete goes bust before the finale', () => camps.forEach(c => { const b = c.servos.nullarbor; assert(b.stats.repaired > 10); assert(b.peteAt && b.peteAt < b.min, 'pete ' + b.peteAt); }));
+
+log('\n## Servos #3 and #4: the UFO Roadhouse and the Opal Dugout');
+log('\n| bot | seed | UFO min | first UFO unlock | UFO longest gap | aliens | beams broken | meteors | Dugout min | first Dugout unlock | Dugout longest gap | opals | black opals | rescues | campaign total min |');
+log('|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|');
+const gapOf = r => { const ts = r.unlocks.map(u => u.t); return Math.max(...ts.map((x, i) => (x - (ts[i - 1] || 0)) / 60).slice(1)); };
+for (const c of camps) { const u = c.servos.ufo, d = c.servos.dugout, L = c.sim.world.life;
+  log(`| ${c.kind} | ${c.seed} | ${u.min.toFixed(1)} | ${u.unlocks[0].t.toFixed(1)} s | ${gapOf(u).toFixed(1)} | ${L.aliens} | ${L.beams} | ${L.meteors} | ${d.min.toFixed(1)} | ${d.unlocks[0].t.toFixed(1)} s | ${gapOf(d).toFixed(1)} | ${L.opals} | ${L.blackOpals} | ${L.rescues} | ${c.totalMin.toFixed(0)} |`); }
+log('\nUFO and Dugout unlock times (minutes after arriving), efficient seed 7:');
+for (const id of ['ufo', 'dugout']) log('\n' + id + ': ' + camps[0].servos[id].unlocks.map(u => `${u.id} ${(u.t / 60).toFixed(1)}`).join(' · '));
+log('');
+for (const id of ['ufo', 'dugout']) {
+  check(id + ': 20-45 min of active play', () => camps.forEach(c => { const m = c.servos[id].min; assert(m >= 20 && m <= 45, c.kind + ' ' + m.toFixed(1)); }));
+  check(id + ': first unlock within 20 s of arriving', () => camps.forEach(c => assert(c.servos[id].unlocks[0].t <= 20, c.servos[id].unlocks[0].t)));
+  check(id + ': no idle stretch over 45 s', () => camps.forEach(c => assert(c.servos[id].idleMax <= 45, c.servos[id].idleMax)));
+  check(id + ': no unlock gap over 7.5 min', () => camps.forEach(c => assert(gapOf(c.servos[id]) <= 7.5, c.kind + ' gap ' + gapOf(c.servos[id]).toFixed(1)))); }
+check('ufo: aliens get served, beams get broken, meteors get grabbed', () => camps.forEach(c => { const L = c.sim.world.life; assert(L.aliens > 20, 'aliens ' + L.aliens); assert(L.beams >= 1, 'beams ' + L.beams); assert(L.meteors >= 5, 'meteors ' + L.meteors); }));
+check('dugout: opals get cut, tourists get rescued', () => camps.forEach(c => { const L = c.sim.world.life; assert(L.opals > 50, 'opals ' + L.opals); assert(L.rescues >= 1, 'rescues ' + L.rescues); }));
+check('Brag Board: a full campaign earns most milestones', () => camps.forEach(c => assert(Object.keys(c.sim.world.milestones).length >= 22, Object.keys(c.sim.world.milestones).length)));
 check('travel keeps crew skills, parks the old servo, and the network pays', () => { const G2 = loadGame(); const sim = new G2.Sim({ seed: 3 }); const d = sim.toJSON(); for (const id of G2.ORDER) d.built[id] = true; d.upgrades = { walk: 5, carry: 4, station: 6, price: 6, staff: 3 }; d.flags.mapComplete = true; d.unlocked.nullarbor = true; sim.load(d); sim.chaosT = 1e9;
   assert(sim.travel('nullarbor')); assert.strictEqual(G2.SERVO.id, 'nullarbor'); assert.strictEqual(sim.upgrades.walk, 5); assert.strictEqual(sim.upgrades.carry, 4); assert.strictEqual(sim.upgrades.staff, 3); assert.strictEqual(sim.upgrades.station, 0); assert.strictEqual(sim.upgrades.price, 0);
   assert(sim.world.others.outback && sim.world.others.outback.rate > 0); assert(sim.networkRate() > 0); assert.strictEqual(Object.keys(sim.built).length, 0); assert.strictEqual(sim.cash, G2.SERVOS.nullarbor.startCash);
@@ -131,7 +149,7 @@ check('travel keeps crew skills, parks the old servo, and the network pays', () 
 check('saves at the Nullarbor round-trip (active servo, parked servo, thongs, fuel, share)', () => { const G2 = loadGame(); const storage = fakeStorage(); G2.Save.storage = () => storage; const sim = new G2.Sim({ seed: 4 }); const d = sim.toJSON(); for (const id of G2.ORDER) d.built[id] = true; d.flags.mapComplete = true; d.unlocked.nullarbor = true; sim.load(d); sim.travel('nullarbor');
   sim.build('pump1'); sim.build('depot'); sim.fuel = 17; sim.depotTray = 5; sim.share = 0.73; sim.player.carry = ['fuel', 'fuel']; sim.world.thongs = { gold: 1, black: 3 }; G2.Save.write(sim.toJSON());
   const G3 = loadGame(); G3.Save.storage = () => storage; const s2 = new G3.Sim({ seed: 9 }); s2.load(G3.Save.read()); assert.strictEqual(G3.SERVO.id, 'nullarbor'); assert(s2.built.pump1 && s2.built.depot); assert.strictEqual(s2.fuel, 17); assert.strictEqual(s2.depotTray, 5); assert(Math.abs(s2.share - 0.73) < 1e-9); assert.strictEqual(JSON.stringify(s2.player.carry), '["fuel","fuel"]'); assert.strictEqual(s2.thongCount, 2); assert(s2.world.others.outback && Object.keys(s2.world.others.outback.built).length === 15); assert(s2.world.bigThings.outback); });
-check('v2 save migrates to v3 at the first servo', () => { const d = G.Save.migrate({ v: 2, cash: 77, built: { pump1: true, bigpie: true }, flags: { mapComplete: true } }); assert.strictEqual(d.v, 3); assert.strictEqual(d.active, 'outback'); assert(d.unlocked.nullarbor); assert(d.bigThings.outback); });
+check('v2 save migrates to v4 at the first servo', () => { const d = G.Save.migrate({ v: 2, cash: 77, built: { pump1: true, bigpie: true }, flags: { mapComplete: true } }); assert.strictEqual(d.v, 4); assert.strictEqual(d.active, 'outback'); assert(d.unlocked.nullarbor); assert(d.bigThings.outback); });
 check('empty tank turns cars away; carrying drums refills it; Trev automates it', () => { const G2 = loadGame(); G2.useServo('nullarbor'); const sim = new G2.Sim({ seed: 5 }); sim.chaosT = 1e9; sim.build('pump1'); sim.build('depot'); sim.fuel = 0; sim.player.x = 9; sim.player.y = 12; for (let i = 0; i < 60 * 30; i++) { sim.step(1 / 60); sim.fx.length = 0; } assert(sim.stats.dry >= 2, 'dry ' + sim.stats.dry);
   sim.depotTray = 6; const dep = G2.STATION_BY_ID.depot.interact; sim.player.x = dep.x; sim.player.y = dep.y; for (let i = 0; i < 60; i++) { sim.step(1 / 60); sim.fx.length = 0; } assert(sim.player.carry.filter(x => x === 'fuel').length >= 4);
   for (let i = 0; i < 60 * 30 && sim.player.carry.includes('fuel'); i++) { sim.autopilot(sim.nextGoal(), 1 / 60); sim.step(1 / 60); sim.fx.length = 0; } assert(sim.fuel >= 8, 'fuel ' + sim.fuel);
@@ -142,7 +160,7 @@ check('roo-damaged cars come more at night, and Mick repairs them alone', () => 
 check('price war: standing on the board wins it and raises Highway Share', () => { const G2 = loadGame(); G2.useServo('nullarbor'); const sim = new G2.Sim({ seed: 7 }); sim.chaosT = 1e9; sim.build('pump1'); sim.build('pie'); sim.build('counter'); const s0 = sim.share; sim.rng.pick = a => a.includes('pricewar') ? 'pricewar' : a[0]; sim.startEvent(); sim.rng = new G2.RNG(1);
   assert.strictEqual(sim.event, 'pricewar'); assert(sim.trafficMult < 0.6 * (0.5 + s0) + 1e-9); assert.strictEqual(sim.nextGoal().type, 'shoo'); for (let i = 0; i < 60 * 20 && sim.event; i++) { sim.autopilot(sim.nextGoal(), 1 / 60); sim.step(1 / 60); sim.fx.length = 0; } assert(!sim.event); assert(sim.share > s0, 'share ' + sim.share); });
 check('thongs: collected designs give +1% prices each, everywhere', () => { const sim = new G.Sim({ seed: 8 }); const p0 = sim.priceMult; sim.floorThongs.push({ x: sim.player.x, y: sim.player.y, t: 0 }); sim.step(1 / 60); assert.strictEqual(sim.thongCount, 1); assert(Math.abs(sim.priceMult / p0 - 1.01) < 1e-9); });
-check('offline formula within 25% of measured automated income at a full Nullarbor (one full day)', () => { const G2 = loadGame(); G2.useServo('nullarbor'); const sim = new G2.Sim({ seed: 3 }); for (const id of G2.ORDER) sim.build(id); sim.fx.length = 0; sim.upgrades = { walk: 6, carry: 5, station: 4, price: 4, staff: 5 }; sim.chaosT = 1e9; sim.player.x = 9; sim.player.y = 12; sim.fuel = 60;
+check('offline formula within 25% of measured automated income at a full Nullarbor (one full day)', () => { const G2 = loadGame(); G2.useServo('nullarbor'); const sim = new G2.Sim({ seed: 3, meta: false }); for (const id of G2.ORDER) sim.build(id); sim.fx.length = 0; sim.upgrades = { walk: 6, carry: 5, station: 4, price: 4, staff: 5 }; sim.chaosT = 1e9; sim.player.x = 9; sim.player.y = 12; sim.fuel = 60;
   const e0 = sim.totalEarned, p0 = Object.values(sim.piles).reduce((a, b) => a + b, 0); for (let i = 0; i < 60 * 360; i++) { sim.input.x = sim.input.y = 0; sim.step(1 / 60); sim.fx.length = 0; } const measured = (sim.totalEarned - e0 + Object.values(sim.piles).reduce((a, b) => a + b, 0) - p0) / 360;
   const eff = G2.ECON.offlineBase + G2.ECON.offlinePerStaff * sim.staffCount; const ratio = (sim.offlineRate() / eff) / measured; log('   Nullarbor measured $/s ' + measured.toFixed(1) + ' vs formula ' + (sim.offlineRate() / eff).toFixed(1) + ' ratio ' + ratio.toFixed(2) + ', dry ' + sim.stats.dry); assert(ratio > 0.75 && ratio < 1.25, ratio); });
 

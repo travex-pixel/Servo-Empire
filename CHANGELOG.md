@@ -1,5 +1,43 @@
 # Changelog
 
+## 0.4.0 - 2026-10-21
+
+Two new servos, a reason to come back every few minutes, and a faster first minute.
+
+### Servo #3: UFO Roadhouse (Stuart Highway, NT)
+- 15 pads in a red-desert roadhouse with neon-green trim, crop circles in the paddock and an alien statue out front.
+- **Landing Pad**: after dark, saucers land and alien customers walk in. They pay triple.
+- **Meteor Shower** event: glowing space rocks crash onto the forecourt. Run over them for cash.
+- **Abduction** event: a saucer beams up your biggest cash pile. Stand in the beam to break it and it coughs up 1.5× what it took.
+- **Zorp the Intern**: an alien hire who beams cash piles straight into your wallet and breaks beams for you.
+- Glow Slushies, Moon Jerky, the Alien Museum (+40% traffic) and **The Big Alien** finale. Cows occasionally get abducted at night.
+
+### Servo #4: Opal Dugout Servo (Stuart Highway, SA)
+- 16 pads on an opal field covered in mullock heaps, with a "Don't walk backwards" shaft warning sign.
+- **Opal mining loop**: the Mullock Heap makes rock; carry it to the Opal Cutter. Most opals are potch, some are crystal or fire, and about 1 in 100 is a **Black Opal** worth 25×.
+- **Dust Storm** event: bowsers get caked in dust and stop pumping until you (or Shazza) wipe them.
+- **Mine Shaft** event: a tourist falls down a shaft. Stand next to the hole for 2 seconds to haul them out for a tip.
+- **Heat**: walk-ins lose patience faster in the day until you build the Underground Cool Room.
+- **Noodler Ned** hauls rock to the cutter forever. Icy poles, pasties, a mining blower truck and **The Big Opal** finale.
+
+### Come-back loops (no timers you can pay to skip, no paid randomness)
+- **Shift Goals**: three small jobs at a time (serve, carry, grab cash, beat an event). Each pays a slice of your next pad; all three pay a Shift Bonus and a 20-second **Smoko Boost** (Hustle locked at ×1.5).
+- **Brag Board**: 29 one-off milestones across the whole network, with rewards scaled to the servo you're at.
+- **Mystery Shopper**: a rare VIP in a suit and sunnies. Serve them before they leave and they pay ×8.
+- **Offline cap grows** with progress: 2 hours at the start, +2 hours per finished servo, up to 8 hours.
+
+### First minute and conversion
+- The start screen is one button. The name field moved to a "Name your servo" prompt that appears right after you build the Front Counter, when the sign actually matters.
+- Returning players get a **Continue** card (servo, pads built, cash, milestones, time away) and a **BACK TO WORK** button.
+- Honest promise line under the button: Free · No ads · No sign-up · 4 servos to build.
+
+### Under the hood
+- Per-servo themes replace every hard-coded servo check in the renderer and UI (ground, walls, signs, travel scene, postcard, finale text, ambient animals).
+- New sounds (saucer, zap, gem, wind), new animals (cow, emu), 22 new customer and alien lines.
+- Save format v4 (milestones, lifetime counters, rock and cutter queues, dusty bowsers) with automatic migration from v1-v3.
+- Milestones that complete a servo now pay out on arrival at the next one, where the cash is useful.
+- Economy retuned so each servo takes about 20-37 minutes of active play for the test bots (about 1 h 45 m for the whole campaign).
+
 ## 0.3.0 - 2026-10-18
 
 Servo #2 and the Servo Network.

@@ -5,7 +5,7 @@
 A mobile-first idle arcade tycoon in a single `index.html`. You walk your character around a dodgy outback-highway
 servo, carry pies and iced coffees from the warmers to the counter, grab the cash piles that cars leave at the pumps,
 and stand on unlock pads to build the place up. Hire Gav, Aunty Val and Shazza and it runs itself, including while
-you're away.
+you're away. Then hit the road: four servos across the outback, each with its own crew, chaos and Big Thing.
 
 - No build step, no external assets. All art is drawn on a canvas, all sound is synthesised with the Web Audio API.
 - Portrait, one thumb, 60 fps target. Also works on desktop.
@@ -13,7 +13,7 @@ you're away.
 
 ## Play it
 
-Open `index.html` in any modern browser, or host it (see below). Tap **OPEN UP, LEGEND**.
+Open `index.html` in any modern browser, or host it (see below). Tap **OPEN UP, LEGEND**. Coming back later, the start screen shows a Continue card with your servo, progress and time away.
 
 ### Controls
 
@@ -31,7 +31,10 @@ Open `index.html` in any modern browser, or host it (see below). Tap **OPEN UP, 
 - **Hustle**: grabbing stock, dropping it, serving and collecting cash builds a combo meter under your wallet. It adds up to +50% to cash piles you collect yourself, and drains if you stand around. Staff and offline earnings never get it.
 - **Road trains** occasionally pull into a pump and pay four times as much.
 - **Day and night**: a full cycle every 6 minutes of play, with the neon sign, pump lights and headlights coming on after dark.
-- **Name your servo** on the start screen or in Settings. The sign and billboard use it.
+- **Name your servo** when the sign-writer turns up (right after you build the Front Counter), or any time in Settings. The sign and billboard use it.
+- **Shift Goals** (📋 pill, top left): three small jobs at a time. Each pays a slice of your next pad. Finish all three for a Shift Bonus and a 20-second **Smoko Boost** that locks Hustle at ×1.5.
+- **Brag Board** (inside the Shift card): 29 one-off milestones across all your servos, each with a cash reward.
+- **Mystery Shopper**: once you've built a few pads, a VIP in a suit occasionally joins the queue. Serve them before they walk and they pay ×8.
 
 ### Servo #2: The Nullarbor (unlocks when you finish the first servo)
 
@@ -45,11 +48,32 @@ Your first servo keeps running and trucks a share of its earnings to you.
 - **Grey Nomad Convoy:** caravans everywhere for 30 seconds.
 - Whale Lookout, Bunda Cliffs, wombats and camels, and **The Big Thong** as the finale.
 
+### Servo #3: UFO Roadhouse (unlocks when you finish the Nullarbor)
+
+A roadhouse in UFO country on the Stuart Highway. Nights come early here.
+
+- **Landing Pad:** after dark, saucers land and alien customers queue up. They pay triple.
+- **Meteor Shower:** space rocks crash onto the forecourt. Run over them for cash before the event ends.
+- **Abduction:** a saucer hovers over your biggest cash pile and beams it up. Stand in the beam to break it; it drops 1.5× what it took.
+- **Zorp the Intern** beams cash piles straight into your wallet and breaks beams for you.
+- Glow Slushies, Moon Jerky, the Alien Museum and **The Big Alien**.
+
+### Servo #4: Opal Dugout Servo (unlocks when you finish the UFO Roadhouse)
+
+An opal-field servo where it's 49 degrees and the houses are holes in the hill.
+
+- **Opal mining:** the Mullock Heap makes rock. Carry it to the Opal Cutter. Most opals are potch, some are crystal or fire, and about 1 in 100 is a **Black Opal** worth 25×.
+- **Dust Storm:** bowsers get caked in dust and stop pumping. Stand next to one for a moment to wipe it, or hire Shazza.
+- **Mine Shaft:** a tourist falls down a shaft. Stand by the hole for 2 seconds to haul them out for a big tip.
+- **Heat:** walk-ins get cranky faster in the day until you build the Underground Cool Room.
+- **Noodler Ned** hauls rock to the cutter for you. Icy poles, pasties and **The Big Opal**.
+
 ### The Servo Network (🗺️ button)
 
 - A map of Australia with your servos, the highways between them and the delivery trucks running cash.
 - **Crew skills** (walk speed, carry, staff speed) follow you to every servo. Station speed and prices are per servo.
 - **Big Things:** each finished servo makes a postcard of its Big Thing you can share.
+- **Offline earnings** cap at 2 hours to start, +2 hours for every servo you finish (8 hours max).
 - **Thong Wall:** happy customers sometimes drop a thong. Collect all 16 designs (common, rare, legendary); each new one is +1% prices everywhere. Found by playing only, never sold.
 - Settings (⚙️): sound and music sliders, haptics, guide arrow, spicy language, anonymous analytics on/off, save code export/import, reset.
 
@@ -72,7 +96,9 @@ which is handy for debugging. With a real key, these events are sent (anonymous 
 and session recording are off, players can opt out in Settings):
 
 `session_start`, `unlock_bought` (station, minutes_since_first_play), `staff_hired`, `upgrade_bought`,
-`offline_return` (minutes_away, cash_earned), `double_offline_tapped`, `chaos_event_seen`, `map_complete`, `servo2_tapped`.
+`offline_return` (minutes_away, cash_earned), `double_offline_tapped`, `chaos_event_seen`, `map_complete`, `servo2_tapped`,
+`servo3_tapped`, `servo_travel`, `network_opened`, `postcard_made`, `postcard_shared`, `thong_found`, `rival_beaten`,
+`goal_completed`, `shift_completed`, `shift_opened`, `milestone_earned`, `servo_named`, `name_prompt_shown`, `name_prompt_skipped`.
 
 ## Develop and test
 
@@ -80,12 +106,14 @@ Everything lives in `index.html`. The simulation (`class Sim`) has no DOM depend
 step, so the same code powers the game, the offline model and the headless tests.
 
 ```bash
-node tests/sim.test.js      # economy bots (efficient + lazy, 3 seeds), offline payouts, save/migration, analytics, pathing
-node tests/browser.test.js  # Playwright: 390x844 + 1440x900, simulated input, screenshots to docs/screenshots, fails on console errors
+node tests/sim.test.js      # economy bots (efficient + lazy, 3 seeds) across all 4 servos, offline payouts, save/migration, analytics, pathing
+node tests/servos.test.js   # fast checks of every v0.4 mechanic: aliens, meteors, beams, Zorp, opals, dust, shafts, heat, Ned, VIPs, goals, milestones
+node tests/clicks.test.js   # click audit: taps every button, toggle, slider and modal and checks the expected state change
+node tests/browser.test.js  # Playwright: 390x844 + 1440x900, simulated input, 4x CPU throttle scenes, screenshots to docs/screenshots
 node tests/quick.js         # one quick bot run per policy with income rates between unlocks
 ```
 
-`tests/campaign.js` plays both servos back to back with a bot and prints the unlock timeline.
+`tests/campaign.js` plays all four servos back to back with a bot and prints the unlock timeline.
 
 The browser test needs `playwright` and a Chromium it can launch (`npx playwright install chromium` if you don't have one).
 

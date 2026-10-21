@@ -19,7 +19,7 @@ async function run() {
     page.on('pageerror', e => errors.push('[pageerror] ' + e.message));
     await page.goto(URL); await sleep(300);
     await page.screenshot({ path: path.join(OUT, `${vp.name}-00-splash.png`) });
-    await page.fill('#nameIn', 'Dazza'); await page.click('#btnStart'); await sleep(300);
+    await page.click('#btnStart'); await sleep(300); await page.evaluate(() => window.__servo.setName('Dazza'));
     const handShown = await page.evaluate(() => window.__servo.renderer.showHand);
     const p0 = await page.evaluate(() => ({ x: window.__servo.sim.player.x, y: window.__servo.sim.player.y, cash: window.__servo.sim.cash }));
     // 1) simulated input. Phone: drag joystick with pointer events. Desktop: hold keys.
@@ -91,7 +91,17 @@ async function run() {
     const day = await runScene('full servo, rush, day', full, () => { window.__servo.sim.time = 10; });
     const nightScene = await runScene('full servo, rush, night', () => { window.__servo.sim.time = 205; });
     const nbScene = await runScene('Nullarbor full, night, convoy', () => { const g = window.__servo, s = g.sim; const d = s.toJSON(); d.unlocked.nullarbor = true; g.loadData(d); s.travel('nullarbor'); for (const id of ServoEmpire.ORDER) s.build(id); s.fx.length = 0; g.renderer.onServoChange(); s.fuel = 60; s.time = 210; s.event = 'rush'; s.eventT = 999; for (let i = 0; i < 8; i++) s.spawnCustomer(); });
-    report.throttled = { rate: 4, dpr: 2, scenes: [day, nightScene, nbScene], errors }; report.errors.push(...errors.map(e => 'throttled: ' + e)); await ctx.close(); }
+    await page.screenshot({ path: path.join(OUT, 'phone-15-nullarbor-throttled.png') });
+    const forceEv = k => { const s = window.__servo.sim; s.event = null; const p = s.rng.pick; s.rng.pick = a => (a.includes(k) ? k : p.call(s.rng, a)); s.startEvent(); s.rng.pick = p; };
+    const ufoScene = await runScene('UFO full, night, aliens + abduction beam', () => { const g = window.__servo, s = g.sim; s.world.unlocked.ufo = true; s.travel('ufo'); for (const id of ServoEmpire.ORDER) s.build(id); s.fx.length = 0; g.renderer.onServoChange(); s.time = 200; s.piles.pump2 = 900; s.player.x = 7; s.player.y = 12; for (let i = 0; i < 6; i++) s.spawnCustomer(true); }, '(' + forceEv.toString() + ')("abduct")');
+    await page.screenshot({ path: path.join(OUT, 'phone-16-ufo-night-beam.png') });
+    const meteorScene = await runScene('UFO full, day, meteor shower', () => { const s = window.__servo.sim; s.beam = null; s.time = 30; s.player.x = 4.5; s.player.y = 10; }, '(' + forceEv.toString() + ')("meteors")');
+    await page.screenshot({ path: path.join(OUT, 'phone-17-ufo-meteors.png') });
+    const dugScene = await runScene('Dugout full, day, dust storm', () => { const g = window.__servo, s = g.sim; s.event = null; s.meteors.length = 0; s.world.unlocked.dugout = true; s.travel('dugout'); for (const id of ServoEmpire.ORDER) s.build(id); s.fx.length = 0; g.renderer.onServoChange(); s.time = 30; s.player.x = 5.5; s.player.y = 14; s.rockTray = 8; s.cutter.q = 8; }, '(' + forceEv.toString() + ')("duststorm")');
+    await page.screenshot({ path: path.join(OUT, 'phone-18-dugout-storm.png') });
+    const shaftScene = await runScene('Dugout full, night, mine shaft', () => { const s = window.__servo.sim; s.event = null; for (const k in s.dusty) s.dusty[k] = false; s.time = 215; }, '(' + forceEv.toString() + ')("shaft")');
+    await page.screenshot({ path: path.join(OUT, 'phone-19-dugout-night-shaft.png') });
+    report.throttled = { rate: 4, dpr: 2, scenes: [day, nightScene, nbScene, ufoScene, meteorScene, dugScene, shaftScene], errors }; report.errors.push(...errors.map(e => 'throttled: ' + e)); await ctx.close(); }
   await browser.close();
   fs.writeFileSync(path.join(__dirname, 'browser-report.json'), JSON.stringify(report, null, 2));
   for (const v of report.viewports) { console.log(`\n== ${v.name} ${v.width}x${v.height}`); console.log(' input moved player:', v.moved); console.log(' after 60s:', JSON.stringify(v.state)); console.log(' busy scene:', JSON.stringify(v.busy)); console.log(' nullarbor:', JSON.stringify(v.nb), ' price war:', JSON.stringify(v.pw)); console.log(' tutorial hand:', v.handShown, ' night/ibis/roadtrain:', JSON.stringify(v.night)); console.log(' welcome shown:', v.welcomeShown, ' complete:', JSON.stringify(v.complete), ' after reload:', JSON.stringify(v.afterReload)); console.log(' errors:', v.errors.length ? v.errors : 'none'); }
